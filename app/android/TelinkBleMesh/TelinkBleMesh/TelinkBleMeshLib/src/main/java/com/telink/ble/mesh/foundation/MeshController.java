@@ -858,6 +858,7 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
         if (mGattConnection.isProxyNodeConnected()) {
             onConnectSuccess();
         } else {
+            onEventPrepared(new FastProvisioningEvent(this, FastProvisioningEvent.EVENT_TYPE_FAST_PROVISIONING_CONNECTING));
             startScan();
         }
     }
@@ -2922,12 +2923,43 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
                 onRemoteCapabilityReceived(device, "remote provisioning success");
             }
         } else if (actionMode == Mode.FAST_PROVISION && mode == AccessBridge.MODE_FAST_PROVISION) {
-            if (state == FastProvisioningController.STATE_RESET_NETWORK) {
+            onFastPvStateChanged(state, desc, obj);
+        }
+    }
+
+    /**
+     * fast provision state changed
+     *
+     * @param state new state
+     * @param desc  state description
+     * @param obj   object
+     */
+    private void onFastPvStateChanged(int state, String desc, Object obj) {
+        switch (state) {
+            case FastProvisioningController.STATE_RESET_NETWORK:
                 switchNetworking(false);
-            } else if (state == FastProvisioningController.STATE_SUCCESS
-                    || state == FastProvisioningController.STATE_FAIL) {
-                onFastProvisioningComplete(state == FastProvisioningController.STATE_SUCCESS, desc);
-            } else if (state == FastProvisioningController.STATE_SET_ADDR_SUCCESS) {
+                onEventPrepared(new FastProvisioningEvent(this, FastProvisioningEvent.EVENT_TYPE_FAST_PROVISIONING_RESET_NWK));
+                break;
+
+            case FastProvisioningController.STATE_GET_ADDR: {
+                // post get address event
+                onEventPrepared(new FastProvisioningEvent(this, FastProvisioningEvent.EVENT_TYPE_FAST_PROVISIONING_GET_ADDRESS));
+                break;
+            }
+
+
+            case FastProvisioningController.STATE_GET_ADDR_RSP: {
+                FastProvisioningDevice device = (FastProvisioningDevice) obj;
+                // post get address event
+                String eventType = FastProvisioningEvent.EVENT_TYPE_FAST_PROVISIONING_GET_ADDRESS_RSP;
+                FastProvisioningEvent event = new FastProvisioningEvent(this, eventType);
+                event.setFastProvisioningDevice(device);
+                onEventPrepared(event);
+                break;
+            }
+
+
+            case FastProvisioningController.STATE_SET_ADDR: {
                 FastProvisioningDevice device = (FastProvisioningDevice) obj;
 
                 /*
@@ -2935,21 +2967,44 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
                  */
                 updateDeviceKeyMap(device.getNewAddress(), device.getDeviceKey());
 
-
                 /**
                  * post event
                  */
-                String eventType = FastProvisioningEvent.EVENT_TYPE_FAST_PROVISIONING_ADDRESS_SET;
+                String eventType = FastProvisioningEvent.EVENT_TYPE_FAST_PROVISIONING_SET_ADDRESS;
                 FastProvisioningEvent event = new FastProvisioningEvent(this, eventType);
                 event.setFastProvisioningDevice(device);
                 onEventPrepared(event);
-            } else if (state == FastProvisioningController.STATE_SET_ADDR_FAIL) {
-                FastProvisioningDevice device = (FastProvisioningDevice) obj;
-                String eventType = FastProvisioningEvent.EVENT_TYPE_FAST_PROVISIONING_ADDRESS_SET_FAIL;
-                FastProvisioningEvent event = new FastProvisioningEvent(this, eventType);
-                event.setFastProvisioningDevice(device);
-                onEventPrepared(event);
+                break;
             }
+
+            case FastProvisioningController.STATE_SET_ADDR_SUCCESS: {
+                FastProvisioningDevice device = (FastProvisioningDevice) obj;
+
+                // post event
+                String eventType = FastProvisioningEvent.EVENT_TYPE_FAST_PROVISIONING_SET_ADDRESS_SUCCESS;
+                FastProvisioningEvent event = new FastProvisioningEvent(this, eventType);
+                event.setFastProvisioningDevice(device);
+                onEventPrepared(event);
+                break;
+            }
+
+            case FastProvisioningController.STATE_SET_ADDR_FAIL: {
+                FastProvisioningDevice device = (FastProvisioningDevice) obj;
+                String eventType = FastProvisioningEvent.EVENT_TYPE_FAST_PROVISIONING_SET_ADDRESS_FAIL;
+                FastProvisioningEvent event = new FastProvisioningEvent(this, eventType);
+                event.setFastProvisioningDevice(device);
+                onEventPrepared(event);
+                break;
+            }
+
+            case FastProvisioningController.STATE_SET_NET_INFO:
+                onEventPrepared(new FastProvisioningEvent(this, FastProvisioningEvent.EVENT_TYPE_FAST_PROVISIONING_SET_DATA));
+                break;
+
+            case FastProvisioningController.STATE_SUCCESS:
+            case FastProvisioningController.STATE_FAIL:
+                onFastProvisioningComplete(state == FastProvisioningController.STATE_SUCCESS, desc);
+                break;
         }
     }
 
