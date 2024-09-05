@@ -358,4 +358,18 @@ public class MainActivity extends BaseActivity implements BottomNavigationView.O
     }
 
 
+    private long backTimestamp = 0;
+    private static final long EXIT_LIMIT = 2 * 1000;
+
+    @Override
+    public void onBackPressed() {
+        long curTime = System.currentTimeMillis();
+        if (curTime - backTimestamp < EXIT_LIMIT) {
+            super.onBackPressed();
+            return;
+        }
+
+        backTimestamp = curTime;
+        toastMsg("back again to exit within 2 seconds");
+    }
 }
