@@ -569,5 +569,13 @@ public class MeshInfo implements Serializable, Cloneable {
         this.saveOrUpdate();
         return seq;
     }
+
+    public GroupInfo getGroupByAddress(int groupAddress) {
+        for (GroupInfo info : groups) {
+            if (info.address == groupAddress)
+                return info;
+        }
+        return null;
+    }
 }
 

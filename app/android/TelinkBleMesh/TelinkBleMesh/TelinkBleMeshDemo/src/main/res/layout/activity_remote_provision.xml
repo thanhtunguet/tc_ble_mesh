@@ -37,6 +37,22 @@
         android:text="Remote Scan"
         android:visibility="gone" />
 
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:background="@color/border_line" />
+
+    <TextView
+        android:id="@+id/tv_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:drawableRight="@drawable/ic_arrow_down"
+        android:drawableTint="@color/gray"
+        android:padding="4dp"
+        android:textSize="12sp" />
+
     <Button
         android:id="@+id/btn_add_all"
         style="@style/Widget.AppCompat.Button.Colored"
@@ -46,17 +62,4 @@
         android:theme="@style/AccentButton"
         android:visibility="gone" />
 
-
-    <!--<Button
-        android:id="@+id/btn_back"
-        android:layout_width="fill_parent"
-        android:layout_height="46dp"
-        android:layout_marginBottom="5dp"
-        android:layout_marginLeft="5dp"
-        android:layout_marginRight="5dp"
-        android:layout_marginTop="10dp"
-        android:background="@drawable/main_bg_click"
-        android:enabled="false"
-        android:text="Go Back"
-        android:textColor="@android:color/white" />-->
 </LinearLayout>
