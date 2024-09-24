@@ -46,6 +46,7 @@ import com.telink.ble.mesh.model.MeshInfo;
 import com.telink.ble.mesh.model.json.MeshStorageService;
 import com.telink.ble.mesh.ui.BaseActivity;
 import com.telink.ble.mesh.ui.ShareImportActivity;
+import com.telink.ble.mesh.util.ContextUtil;
 import com.telink.ble.mesh.util.MeshLogger;
 
 import java.io.IOException;
@@ -143,7 +144,7 @@ public class QRCodeScanActivity extends BaseActivity implements ZXingScannerView
     private void getCloudMeshJson(String scanText) {
         try {
             UUID uuid = UUID.fromString(scanText);
-            String baseUrl = SharedPreferenceHelper.getBaseUrl(this);
+            String baseUrl = SharedPreferenceHelper.getBaseUrl(this) + "/";
             TelinkHttpClient.getInstance().download(baseUrl, uuid.toString(), downloadCallback);
         } catch (IllegalArgumentException exception) {
             showErrorDialog("Content unrecognized");
@@ -271,7 +272,9 @@ public class QRCodeScanActivity extends BaseActivity implements ZXingScannerView
         @Override
         public void onFailure(Call call, IOException e) {
             MeshLogger.d("download fail: " + e.toString());
-            onDownloadFail("request fail, pls check network");
+            boolean isNetworkOk = ContextUtil.isNetworkAvailable(getApplicationContext());
+            onDownloadFail(!isNetworkOk ? "request fail, pls check network" : "request fail, pls check the URL");
+//            onDownloadFail("request fail, pls check network");
         }
 
         @Override
