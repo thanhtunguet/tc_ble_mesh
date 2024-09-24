@@ -30,6 +30,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -257,6 +258,7 @@ public class FUActivity extends BaseActivity implements View.OnClickListener,
             return;
         }
         setContentView(R.layout.activity_fu);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         extendBearerMode = SharedPreferenceHelper.getExtendBearerMode(this);
         mesh = TelinkMeshApplication.getInstance().getMeshInfo();
         setTitle("Mesh OTA");
