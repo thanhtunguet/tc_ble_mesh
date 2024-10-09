@@ -781,6 +781,7 @@ public class FUActivity extends BaseActivity implements View.OnClickListener,
         }
         if (state == FUState.UPDATE_COMPLETE || state == FUState.UPDATE_FAIL) {
             this.isComplete = true;
+            FUCacheService.getInstance().clear(this);
             runOnUiThread(this::showCompleteDialog);
 
         }
