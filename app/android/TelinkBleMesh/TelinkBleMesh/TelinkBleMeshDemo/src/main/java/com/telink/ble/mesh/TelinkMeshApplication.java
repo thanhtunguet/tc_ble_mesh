@@ -22,9 +22,14 @@
  *******************************************************************************************************/
 package com.telink.ble.mesh;
 
+import android.app.Activity;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.telink.ble.mesh.core.message.MeshSigModel;
 import com.telink.ble.mesh.core.message.NotificationMessage;
@@ -72,6 +77,8 @@ public class TelinkMeshApplication extends MeshApplication {
 
     private Handler mOfflineCheckHandler;
 
+    // foreground activity count
+    private int fgActCnt;
     @Override
     public void onCreate() {
         super.onCreate();
@@ -82,6 +89,7 @@ public class TelinkMeshApplication extends MeshApplication {
         MeshLogger.enableRecord(SharedPreferenceHelper.isLogEnable(this));
         AppCrashHandler.init(this);
         closePErrorDialog();
+        regActLfCb();
     }
 
     /**
@@ -379,4 +387,48 @@ public class TelinkMeshApplication extends MeshApplication {
     }
 
 
+    private void regActLfCb(){
+
+        registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+
+            }
+
+            @Override
+            public void onActivityStarted(@NonNull Activity activity) {
+                fgActCnt++;
+            }
+
+            @Override
+            public void onActivityResumed(@NonNull Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityPaused(@NonNull Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityStopped(@NonNull Activity activity) {
+                fgActCnt--;
+            }
+
+            @Override
+            public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
+
+            }
+
+            @Override
+            public void onActivityDestroyed(@NonNull Activity activity) {
+
+            }
+        });
+    }
+
+
+    public boolean isForeground() {
+        return fgActCnt >= 1;
+    }
 }
