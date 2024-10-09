@@ -81,12 +81,19 @@ public class MainActivity extends BaseActivity implements BottomNavigationView.O
     private NetworkFragment networkFragment;
     private SettingFragment settingFragment;
     private Handler mHandler = new Handler();
+    private static final String KEY_NAV_ITEM = "com.telink.ble.mesh.main.KEY_NAV_ITEM";
+    private BottomNavigationView bottom_nav;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initDb();
+        if (savedInstanceState != null && savedInstanceState.containsKey(KEY_NAV_ITEM)) {
+            MeshLogger.d("restore bottom nav");
+            if (bottom_nav != null)
+                bottom_nav.setSelectedItemId(savedInstanceState.getInt(KEY_NAV_ITEM));
+        }
     }
 
 
@@ -114,8 +121,8 @@ public class MainActivity extends BaseActivity implements BottomNavigationView.O
     }
 
     private void initBottomNav() {
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_nav);
-        bottomNavigationView.setOnNavigationItemSelectedListener(this);
+        bottom_nav = findViewById(R.id.bottom_nav);
+        bottom_nav.setOnNavigationItemSelectedListener(this);
         fm = getSupportFragmentManager();
         deviceFragment = new DeviceFragment();
         groupFragment = new GroupFragment();
@@ -176,7 +183,13 @@ public class MainActivity extends BaseActivity implements BottomNavigationView.O
     protected void onDestroy() {
         super.onDestroy();
         TelinkMeshApplication.getInstance().removeEventListener(this);
-        MeshService.getInstance().clear();
+        boolean isAppForeground = TelinkMeshApplication.getInstance().isForeground();
+        MeshLogger.d("isAppForeground ? " + isAppForeground);
+        if (!isAppForeground) {
+            MeshService.getInstance().clear();
+        }
+
+
     }
 
 
@@ -371,5 +384,13 @@ public class MainActivity extends BaseActivity implements BottomNavigationView.O
 
         backTimestamp = curTime;
         toastMsg("back again to exit within 2 seconds");
+    }
+
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        MeshLogger.d("main - onSaveInstanceState");
+        outState.putInt(KEY_NAV_ITEM, bottom_nav.getSelectedItemId());
     }
 }
