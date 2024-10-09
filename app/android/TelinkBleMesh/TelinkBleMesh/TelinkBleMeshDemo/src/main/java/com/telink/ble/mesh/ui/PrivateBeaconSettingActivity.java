@@ -31,6 +31,7 @@ import android.widget.Toast;
 
 import com.telink.ble.mesh.TelinkMeshApplication;
 import com.telink.ble.mesh.core.message.MeshMessage;
+import com.telink.ble.mesh.core.message.Opcode;
 import com.telink.ble.mesh.core.message.config.BeaconSetMessage;
 import com.telink.ble.mesh.core.message.config.BeaconStatusMessage;
 import com.telink.ble.mesh.core.message.config.GattProxySetMessage;
@@ -43,6 +44,7 @@ import com.telink.ble.mesh.core.message.privatebeacon.PrivateGattProxySetMessage
 import com.telink.ble.mesh.core.message.privatebeacon.PrivateGattProxyStatusMessage;
 import com.telink.ble.mesh.core.message.privatebeacon.PrivateNodeIdentitySetMessage;
 import com.telink.ble.mesh.core.message.privatebeacon.PrivateNodeIdentityStatusMessage;
+import com.telink.ble.mesh.core.networking.AccessType;
 import com.telink.ble.mesh.demo.R;
 import com.telink.ble.mesh.foundation.Event;
 import com.telink.ble.mesh.foundation.EventListener;
@@ -166,11 +168,22 @@ public class PrivateBeaconSettingActivity extends BaseActivity implements EventL
                     skipChange = false;
                     return;
                 }
-                message = PrivateGattProxySetMessage.getSimple(meshAddress, (byte) (isChecked ? 1 : 0));
+                long delay = 0;
                 if (isChecked && sw_gatt_prx.isChecked()) {
                     skipChange = true;
                     sw_gatt_prx.setChecked(false);
+                    delay = 200;
+//                    GattProxySetMessage.getSimple(meshAddress, (byte) 0);
+                    MeshMessage msg = new MeshMessage();
+                    msg.setAccessType(AccessType.DEVICE);
+                    msg.setDestinationAddress(meshAddress);
+                    msg.setOpcode(Opcode.CFG_GATT_PROXY_SET.value);
+                    msg.setParams(new byte[]{0x00});
+                    msg.setResponseOpcode(-1);
+                    MeshService.getInstance().sendMeshMessage(msg);
                 }
+//                handler.postDelayed(() -> , delay);
+                MeshService.getInstance().sendMeshMessage(PrivateGattProxySetMessage.getSimple(meshAddress, (byte) (isChecked ? 1 : 0)));
                 break;
 
             case R.id.sw_node_id:
