@@ -577,5 +577,13 @@ public class MeshInfo implements Serializable, Cloneable {
         }
         return null;
     }
+
+    public NodeInfo getDeviceByMac(String mac) {
+        for (NodeInfo info : nodes) {
+            if (mac.equalsIgnoreCase(info.macAddress))
+                return info;
+        }
+        return null;
+    }
 }
 

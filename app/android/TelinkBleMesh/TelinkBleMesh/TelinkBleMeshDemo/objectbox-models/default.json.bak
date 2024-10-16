@@ -554,7 +554,7 @@
     },
     {
       "id": "13:290183085493963579",
-      "lastPropertyId": "3:5778465881033196699",
+      "lastPropertyId": "4:8172139637499398864",
       "name": "Scheduler",
       "properties": [
         {
@@ -575,6 +575,11 @@
           "type": 11,
           "flags": 520,
           "relationTarget": "SchedulerRegister"
+        },
+        {
+          "id": "4:8172139637499398864",
+          "name": "elementOffset",
+          "type": 5
         }
       ],
       "relations": []

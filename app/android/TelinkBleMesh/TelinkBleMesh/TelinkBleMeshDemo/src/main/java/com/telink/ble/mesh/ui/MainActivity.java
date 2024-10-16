@@ -22,14 +22,19 @@
  *******************************************************************************************************/
 package com.telink.ble.mesh.ui;
 
+import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
@@ -392,5 +397,43 @@ public class MainActivity extends BaseActivity implements BottomNavigationView.O
         super.onSaveInstanceState(outState);
         MeshLogger.d("main - onSaveInstanceState");
         outState.putInt(KEY_NAV_ITEM, bottom_nav.getSelectedItemId());
+    }
+
+
+
+    private static final int PERMISSION_REQUEST_CODE_CAMERA = 0x01;
+
+
+    public void checkPermissionAndStart() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            if (networkFragment != null) {
+                networkFragment.startQrScanActivity();
+            }
+        } else {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                    == PackageManager.PERMISSION_GRANTED) {
+                if (networkFragment != null) {
+                    networkFragment.startQrScanActivity();
+                }
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.CAMERA}, PERMISSION_REQUEST_CODE_CAMERA);
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        MeshLogger.d("onRequestPermissionsResult : " + requestCode);
+        if (requestCode == PERMISSION_REQUEST_CODE_CAMERA) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (networkFragment != null) {
+                    networkFragment.startQrScanActivity();
+                }
+            } else {
+                Toast.makeText(this, "camera permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }
