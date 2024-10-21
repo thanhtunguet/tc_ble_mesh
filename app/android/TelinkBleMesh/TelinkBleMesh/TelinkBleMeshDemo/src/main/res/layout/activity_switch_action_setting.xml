@@ -205,6 +205,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:layout_margin="8dp">
 
         <TextView
@@ -214,10 +215,20 @@
 
         <EditText
             android:id="@+id/et_pub_adr"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:digits="@string/hex_input"
             android:text="20"
             android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btn_address"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAllCaps="false"
+            android:text="AddressList"
+            android:textColor="@color/colorPrimary" />
     </LinearLayout>
 </LinearLayout>

@@ -39,11 +39,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.telink.ble.mesh.TelinkMeshApplication;
+import com.telink.ble.mesh.core.message.NotificationMessage;
 import com.telink.ble.mesh.demo.R;
 import com.telink.ble.mesh.foundation.Event;
 import com.telink.ble.mesh.foundation.EventListener;
+import com.telink.ble.mesh.foundation.MeshService;
+import com.telink.ble.mesh.foundation.event.StatusNotificationEvent;
 import com.telink.ble.mesh.model.MeshInfo;
 import com.telink.ble.mesh.model.NodeInfo;
+import com.telink.ble.mesh.model.db.MeshInfoService;
+import com.telink.ble.mesh.model.db.ObjectBox;
 import com.telink.ble.mesh.ui.BaseActivity;
 import com.telink.ble.mesh.util.Arrays;
 import com.telink.ble.mesh.util.MeshLogger;
@@ -54,45 +59,17 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import io.objectbox.Box;
+import io.objectbox.BoxStore;
+
 /**
  * set enocean device (switch)
  */
 public final class SwitchSettingActivity extends BaseActivity implements EventListener<String> {
 
-    /**
-     * set key 0 and key 1
-     */
-    public static final int REQUEST_CODE_SET_KEY_0_1 = 1;
-
-    /**
-     * set key 0 and key 1
-     */
-    public static final int REQUEST_CODE_SET_KEY_2_3 = 2;
-
-    /**
-     * EnOcean pair response
-     */
-    public static final byte EH_PAIR_ST_SUCCESS = 0;
-
-    public static final byte EH_PAIR_ST_MISSING_PKT = 1;
-
-    public static final byte EH_PAIR_ST_AUTH_FAILED = 2;
-
-    public static final byte EH_PAIR_ST_UNICAST_ADDR_OCCUPIED = 3;
-
-    public static final byte EH_PAIR_ST_INSUFFICIENT_RES = 4;
-
-    public static final byte EH_PAIR_NOT_ENOUGH_INFO = 5;
-
-    public static final byte EH_PAIR_PUB_INVALID_ADDRESS = 6;
-
-    public static final byte EH_PAIR_PUB_INSUFFICIENT_RES = 7;
-
     private NodeInfo switchLight;
 
     private MeshInfo mesh;
-
-    private TextView tv_action_key_0_1, tv_action_key_2_3;
 
     private List<NodeInfo> lights;
 
@@ -127,15 +104,14 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
 
         this.mApplication = TelinkMeshApplication.getInstance();
         mesh = this.mApplication.getMeshInfo();
-//        this.mApplication.addEventListener(NotificationEvent.GET_DEVICE_STATE, this);
-//        this.mApplication.addEventListener(NotificationEvent.ONLINE_STATUS, this);
-//        this.mApplication.addEventListener(DeviceEvent.STATUS_CHANGED, this);
+        this.mApplication.addEventListener(EhRspStatusMessage.class.getName(), this);
         initData();
         initView();
+
     }
 
     private void initData() {
-        int address = getIntent().getIntExtra("meshAddress", 0);
+        int address = getIntent().getIntExtra("deviceAddress", 0);
         switchLight = mesh.getDeviceByMeshAddress(address);
         lights = new ArrayList<>();
         for (NodeInfo light : mesh.nodes) {
@@ -156,15 +132,6 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
         adapter = new SelectNodeInSwitchAdapter(this, lights);
 //        adapter.setOnItemClickListener(position -> adapter.changeSelection(position));// this::setSwitch
         rv_devices.setAdapter(adapter);
-
-        findViewById(R.id.view_key_0_1).setOnClickListener(
-                v -> startActivityForResult(new Intent(SwitchSettingActivity.this, SwitchActionSettingActivity.class).putExtra(SwitchActionSettingActivity.EXTRA_ACTION, switchLight.switchActions.get(0)), REQUEST_CODE_SET_KEY_0_1));
-        findViewById(R.id.view_key_2_3).setOnClickListener(
-                v -> startActivityForResult(new Intent(SwitchSettingActivity.this, SwitchActionSettingActivity.class).putExtra(SwitchActionSettingActivity.EXTRA_ACTION, switchLight.switchActions.get(1)), REQUEST_CODE_SET_KEY_2_3));
-
-        tv_action_key_0_1 = findViewById(R.id.tv_action_key_0_1);
-        tv_action_key_2_3 = findViewById(R.id.tv_action_key_2_3);
-
 
         findViewById(R.id.btn_kick).setOnClickListener(v ->
                 showConfirmDialog("kick out EnOcean switch?", (dialog, which) -> kickOut()));
@@ -208,7 +175,7 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
                 switchLight.switchActions.addAll(SwitchUtils.getSingleActions());
             }
             updateUI();
-            mesh.saveOrUpdate();
+            saveNodeInfo();
         });
 
         actionAdapter = new SwitchActionAdapter(this);
@@ -283,7 +250,6 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
         mesh.saveOrUpdate();
     }
 
-
     public void updateAllSelectState() {
         cb_all.setChecked(adapter.allSelected());
     }
@@ -314,11 +280,13 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
         for (int i = 0; i < switchLight.switchActions.size(); i++) {
             switchAction = switchLight.switchActions.get(i);
             if (switchAction.keyIndex == action.keyIndex) {
-                switchLight.switchActions.set(i, action);
+                switchAction.updateFromOther(action);
+                MeshInfoService.getInstance().updateSwitchAction(switchAction);
+//                switchLight.switchActions.set(i, action);
                 break;
             }
         }
-        mesh.saveOrUpdate();
+
     }
 
     private void updateUI() {
@@ -335,16 +303,16 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
 
     //    private Light settingLight;
     // add pair and pub
-    private static final int SETTING_OP_ADD_PAIR_PUB = 1;
+    private static final int SETTING_OP_PAIR = 1;
 
     // add publish only
-    private static final int SETTING_OP_ADD_PUB = 2;
+    private static final int SETTING_OP_PUB = 2;
 
     // delete publish only
 //    private static final int SETTING_OP_DEL_PUB = 3;
 
     // delete pair
-    private static final int SETTING_OP_DEL_PAIR = 4;
+    private static final int SETTING_OP_DEL = 4;
     private int settingOp = 0;
 
 
@@ -365,11 +333,10 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
         if (allSelected) {
             addAll();
         } else {
-            settingOp = SETTING_OP_DEL_PAIR;
+            settingOp = SETTING_OP_DEL;
             removeAll();
         }
     }
-
 
     private Runnable SET_SWITCH_TIMEOUT_TASK = () -> {
         MeshLogger.d("set switch timeout");
@@ -377,6 +344,11 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
     };
 
     private void onSaveComplete(boolean success) {
+        if (settingOp == SETTING_OP_PAIR) {
+            setAllPub();
+            return;
+        }
+        mHandler.removeCallbacks(SET_SWITCH_TIMEOUT_TASK);
         MeshLogger.d("onSaveComplete : " + success);
         runOnUiThread(() -> {
             dismissWaitingDialog();
@@ -402,128 +374,152 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
         if (allPaired) {
             setAllPub();
         } else {
-            setAllPairAndPub();
+            pairAll();
         }
     }
 
+    private void pairAll() {
+        MeshLogger.d("set all pair");
+        settingOp = SETTING_OP_PAIR;
+        int address = 0xFFFF;
+        int appKeyIndex = mesh.getDefaultAppKeyIndex();
+        byte[] mac = Arrays.reverse(Arrays.hexToBytes(switchLight.macAddress.replace(":", "")));
+        EhPairMessage pairMessage = EhPairMessage.getSimple(address, appKeyIndex, switchLight.meshAddress, mac, switchLight.deviceKey);
+        MeshService.getInstance().sendMeshMessage(pairMessage);
+    }
 
     private void setAllPub() {
         MeshLogger.d("set all publish");
-        settingOp = SETTING_OP_ADD_PUB;
+        settingOp = SETTING_OP_PUB;
         int address = 0xFFFF;
 
-
         ArrayMap<SwitchAction, Boolean> preparedActions = getPreparedActions();
-        int segN = preparedActions.size() - 1;
         int index;
-        byte[] paramsAll = new byte[preparedActions.size() * 10];
-        byte pubOpcode = (byte) 0xCD;
+        byte[] re = new byte[0];
         for (index = 0; index < preparedActions.size(); index++) {
-            int finalI = index;
-            mHandler.postDelayed(() -> {
-                byte seg = getSeg(segN, finalI);
-                byte[] params = EH_PairPub(seg, preparedActions.keyAt(finalI), preparedActions.valueAt(finalI));
-                System.arraycopy(params, 0, paramsAll, finalI * 10, params.length);
-//                TelinkLightService.Instance().sendCommandNoResponse(pubOpcode, address, params);
-            }, index * 320);
+            byte[] actionData;
+            boolean isGeneric = preparedActions.valueAt(index);
+            SwitchAction action = preparedActions.keyAt(index);
+            if (isGeneric) {
+                actionData = SwitchUtils.genGenericCmd(switchLight.meshAddress, action);
+            } else {
+                actionData = SwitchUtils.genSpecialCmd(switchLight.meshAddress, action);
+            }
+            re = ByteBuffer.allocate(re.length + actionData.length).put(re).put(actionData).array();
         }
-
-        mHandler.postDelayed(() -> {
-            byte opcode = (byte) 0xC7;
-            int crc = crc16(paramsAll);
-            byte[] params = EH_PairConfirm((short) crc);
-//            TelinkLightService.Instance().sendCommandNoResponse(opcode, address, params);
-        }, index * 320);
+        MeshService.getInstance().sendMeshMessage(EhPubSetMessage.getSimple(address, mesh.getDefaultAppKeyIndex(), re));
     }
 
+//    private void setAllPub() {
+//        MeshLogger.d("set all publish");
+//        settingOp = SETTING_OP_PUB;
+//        int address = 0xFFFF;
+//
+//        ArrayMap<SwitchAction, Boolean> preparedActions = getPreparedActions();
+//        int index;
+//        byte[] re = new byte[0];
+//        for (index = 0; index < preparedActions.size(); index++) {
+//            byte[] actionData;
+//            boolean isGeneric = preparedActions.valueAt(index);
+//            SwitchAction action = preparedActions.keyAt(index);
+//            if (isGeneric) {
+//                actionData = SwitchUtils.genGenericCmd(switchLight.meshAddress, action);
+//            } else {
+//                actionData = SwitchUtils.genSpecialCmd(switchLight.meshAddress, action);
+//            }
+//            re = ByteBuffer.allocate(re.length + actionData.length).put(re).put(actionData).array();
+//        }
+//        MeshService.getInstance().sendMeshMessage(EhPubSetMessage.getSimple(address, mesh.getDefaultAppKeyIndex(), re));
+//    }
 
-    private void setAllPairAndPub() {
-        settingOp = SETTING_OP_ADD_PAIR_PUB;
-        MeshLogger.d("add all");
-        int address = 0xFFFF;
-        ArrayMap<SwitchAction, Boolean> preparedActions = getPreparedActions();
 
-        byte[] paramsAll = new byte[(3 + preparedActions.size()) * 10];
-        int segN = (3 + preparedActions.size()) - 1;
-        int index = 0;
-        // set mac
-        {
-            byte seg = getSeg(segN, 0);
-            byte opcode = (byte) 0xCD;
-            byte[] params = EH_PairParMac(seg);
-            System.arraycopy(params, 0, paramsAll, 0, params.length);
-//            TelinkLightService.Instance().sendCommandNoResponse(opcode, address, params);
-        }
-
-        index += 1;
-        {
-            mHandler.postDelayed(() -> {
-                byte seg = getSeg(segN, 1);
-                byte opcode = (byte) 0xCD;
-                byte[] params = EH_PairParSet_L(seg);
-                System.arraycopy(params, 0, paramsAll, 10, params.length);
+//    private void setAllPairAndPub() {
+//        settingOp = SETTING_OP_ADD_PAIR_PUB;
+//        MeshLogger.d("add all");
+//        int address = 0xFFFF;
+//        ArrayMap<SwitchAction, Boolean> preparedActions = getPreparedActions();
+//
+//        byte[] paramsAll = new byte[(3 + preparedActions.size()) * 10];
+//        int segN = (3 + preparedActions.size()) - 1;
+//        int index = 0;
+//        // set mac
+//        {
+//            byte seg = getSeg(segN, 0);
+//            byte opcode = (byte) 0xCD;
+//            byte[] params = EH_PairParMac(seg);
+//            System.arraycopy(params, 0, paramsAll, 0, params.length);
+////            TelinkLightService.Instance().sendCommandNoResponse(opcode, address, params);
+//        }
+//
+//        index += 1;
+//        {
+//            mHandler.postDelayed(() -> {
+//                byte seg = getSeg(segN, 1);
+//                byte opcode = (byte) 0xCD;
+//                byte[] params = EH_PairParSet_L(seg);
+//                System.arraycopy(params, 0, paramsAll, 10, params.length);
+////                TelinkLightService.Instance().sendCommandNoResponse(opcode, address, params);
+//            }, index * 320);
+//        }
+//
+//
+//        index += 1;
+//        {
+//            mHandler.postDelayed(() -> {
+//                byte seg = getSeg(segN, 2);
+//                byte opcode = (byte) 0xCD;
+//                byte[] params = EH_PairParSet_H(seg);
+//                System.arraycopy(params, 0, paramsAll, 20, params.length);
+////                TelinkLightService.Instance().sendCommandNoResponse(opcode, address, params);
+//            }, index * 320);
+//        }
+//
+//
+//        byte pubOpcode = (byte) 0xCD;
+//        for (; index < preparedActions.size() + 3; index++) {
+//            int finalI = index;
+//            mHandler.postDelayed(() -> {
+//                byte seg = getSeg(segN, finalI);
+//                byte[] params = EH_PairPub(seg, preparedActions.keyAt(finalI), preparedActions.valueAt(finalI));
+//                System.arraycopy(params, 0, paramsAll, finalI * 10, params.length);
+////                TelinkLightService.Instance().sendCommandNoResponse(pubOpcode, address, params);
+//            }, index * 320);
+//        }
+//
+//        /*index += 1;
+//        {
+//            mHandler.postDelayed(() -> {
+//                byte seg = getSeg(segN, 3);
+//                SwitchAction switchAction = switchLight.switchActions.get(0);
+//                byte opcode = (byte) 0xCD;
+//                byte[] params = EH_PairPub(seg, switchAction);
+//                System.arraycopy(params, 0, paramsAll, 30, params.length);
 //                TelinkLightService.Instance().sendCommandNoResponse(opcode, address, params);
-            }, index * 320);
-        }
-
-
-        index += 1;
-        {
-            mHandler.postDelayed(() -> {
-                byte seg = getSeg(segN, 2);
-                byte opcode = (byte) 0xCD;
-                byte[] params = EH_PairParSet_H(seg);
-                System.arraycopy(params, 0, paramsAll, 20, params.length);
+//            }, index * 320);
+//        }
+//
+//
+//        index += 1;
+//        {
+//            mHandler.postDelayed(() -> {
+//                byte seg = getSeg(segN, 4);
+//                SwitchAction switchAction = switchLight.switchActions.get(1);
+//                byte opcode = (byte) 0xCD;
+//                byte[] params = EH_PairPub(seg, switchAction);
+//                System.arraycopy(params, 0, paramsAll, 40, params.length);
 //                TelinkLightService.Instance().sendCommandNoResponse(opcode, address, params);
-            }, index * 320);
-        }
-
-
-        byte pubOpcode = (byte) 0xCD;
-        for (; index < preparedActions.size() + 3; index++) {
-            int finalI = index;
-            mHandler.postDelayed(() -> {
-                byte seg = getSeg(segN, finalI);
-                byte[] params = EH_PairPub(seg, preparedActions.keyAt(finalI), preparedActions.valueAt(finalI));
-                System.arraycopy(params, 0, paramsAll, finalI * 10, params.length);
-//                TelinkLightService.Instance().sendCommandNoResponse(pubOpcode, address, params);
-            }, index * 320);
-        }
-
-        /*index += 1;
-        {
-            mHandler.postDelayed(() -> {
-                byte seg = getSeg(segN, 3);
-                SwitchAction switchAction = switchLight.switchActions.get(0);
-                byte opcode = (byte) 0xCD;
-                byte[] params = EH_PairPub(seg, switchAction);
-                System.arraycopy(params, 0, paramsAll, 30, params.length);
-                TelinkLightService.Instance().sendCommandNoResponse(opcode, address, params);
-            }, index * 320);
-        }
-
-
-        index += 1;
-        {
-            mHandler.postDelayed(() -> {
-                byte seg = getSeg(segN, 4);
-                SwitchAction switchAction = switchLight.switchActions.get(1);
-                byte opcode = (byte) 0xCD;
-                byte[] params = EH_PairPub(seg, switchAction);
-                System.arraycopy(params, 0, paramsAll, 40, params.length);
-                TelinkLightService.Instance().sendCommandNoResponse(opcode, address, params);
-            }, index * 320);
-        }*/
-
-        {
-            mHandler.postDelayed(() -> {
-                byte opcode = (byte) 0xC7;
-                int crc = crc16(paramsAll);
-                byte[] params = EH_PairConfirm((short) crc);
-//                TelinkLightService.Instance().sendCommandNoResponse(opcode, address, params);
-            }, index * 320);
-        }
-    }
+//            }, index * 320);
+//        }*/
+//
+//        {
+//            mHandler.postDelayed(() -> {
+//                byte opcode = (byte) 0xC7;
+//                int crc = crc16(paramsAll);
+//                byte[] params = EH_PairConfirm((short) crc);
+////                TelinkLightService.Instance().sendCommandNoResponse(opcode, address, params);
+//            }, index * 320);
+//        }
+//    }
 
     private boolean isOpposite(SwitchAction actionA, SwitchAction actionB) {
         if (actionA.action != actionB.action) return false;
@@ -541,23 +537,22 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
     private ArrayMap<SwitchAction, Boolean> getPreparedActions() {
         List<SwitchAction> actions = switchLight.switchActions;
         ArrayMap<SwitchAction, Boolean> preparedActions = new ArrayMap<>();
-        int actionCnt = switchLight.switchActions.size();
+        int actionCnt = actions.size();
+
+        MeshLogger.d("actionCnt : " + actionCnt);
         if (actionCnt == 4) {
-            if (!isOpposite(actions.get(0), actions.get(1))) {
-                // use generic
-                preparedActions.put(actions.get(0), true);
-                preparedActions.put(actions.get(1), true);
+            insertActionToMap(preparedActions, actions.get(0), actions.get(1));
+            insertActionToMap(preparedActions, actions.get(2), actions.get(3));
+        } else if (actionCnt == 3) {
+            int secondActionKeyIndex = actions.get(1).keyIndex;
+            if (secondActionKeyIndex == 1) {
+                // 0|1|23
+                insertActionToMap(preparedActions, actions.get(0), actions.get(1)); //  0 and 1 maybe opposite
+                preparedActions.put(actions.get(2), false); // 0
             } else {
-                // use special
-                preparedActions.put(actions.get(0), false);
-            }
-            if (!isOpposite(actions.get(2), actions.get(3))) {
-                // use generic
-                preparedActions.put(actions.get(2), true);
-                preparedActions.put(actions.get(3), true);
-            } else {
-                // use special
-                preparedActions.put(actions.get(2), false);
+                // 01|2|3
+                preparedActions.put(actions.get(0), false); // 01
+                insertActionToMap(preparedActions, actions.get(1), actions.get(2));
             }
         } else {
             preparedActions.put(actions.get(0), false);
@@ -567,15 +562,25 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
         return preparedActions;
     }
 
+    private int insertActionToMap(ArrayMap<SwitchAction, Boolean> map, SwitchAction actA, SwitchAction actB) {
+        if (isOpposite(actA, actB)) {
+            // use special
+            map.put(actA, false);
+            MeshLogger.d("use special [1]");
+            return 1;
+        } else {
+            // use generic
+            map.put(actA, true);
+            map.put(actB, true);
+            MeshLogger.d("use generic [2]");
+            return 2;
+        }
+    }
+
     private void removeAll() {
         MeshLogger.d("remove all");
         int address = 0xFFFF;
-        // set mac
-        {
-            byte opcode = (byte) 0xC7;
-            byte[] params = EH_PairDelete();
-//            TelinkLightService.Instance().sendCommandNoResponse(opcode, address, params);
-        }
+        MeshService.getInstance().sendMeshMessage(EhDeleteMessage.getSimple(address, mesh.getDefaultAppKeyIndex(), switchLight.meshAddress));
     }
 
     public byte getSeg(int segN, int segO) {
@@ -696,9 +701,10 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
      */
     private byte[] EH_PairPub(byte seg, SwitchAction action, boolean isGeneric) {
         if (isGeneric) {
-            return SwitchUtils.genGenericCmd(switchLight.meshAddress, seg, action);
+//            return SwitchUtils.genGenericCmd(switchLight.meshAddress, seg, action);
         }
-        return SwitchUtils.genSpecialCmd(switchLight.meshAddress, seg, action);
+//        return SwitchUtils.genSpecialCmd(switchLight.meshAddress, seg, action);
+        return null;
     }
 
 
@@ -737,6 +743,17 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
      */
     @Override
     public void performed(Event<String> event) {
+        if (event.getType().equals(EhRspStatusMessage.class.getName())) {
+            NotificationMessage message = ((StatusNotificationEvent) event).getNotificationMessage();
+            EhRspStatusMessage rspStatusMessage = (EhRspStatusMessage) message.getStatusMessage();
+            boolean isSuccess = rspStatusMessage.isSuccess();
+            MeshLogger.d("EhRspStatusMessage :" + rspStatusMessage.toString());
+            if (isSuccess) {
+                onPairResponseSuccess(message.getSrc());
+            } else {
+                MeshLogger.w("eh rsp error : " + rspStatusMessage.getStDesc());
+            }
+        }
         /*if (NotificationEvent.GET_DEVICE_STATE.equals(event.getType())) {
             byte[] params = ((NotificationEvent) event).getArgs().params;
             int src = ((NotificationEvent) event).getArgs().src;
@@ -748,51 +765,52 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
 
     // pair confirm rsp: 100001
     // pair delete rsp:  1100
-    private void onPairConfirm(int address, byte[] params) {
-        MeshLogger.d("onPairConfirm ---- ");
-        if (params.length < 2) {
-            MeshLogger.d("params len error");
-            return;
-        }
-        byte subOp = params[0];
-        byte st = params[1];
-        if (st != EH_PAIR_ST_SUCCESS) {
-            MeshLogger.d("setting rsp error : " + st);
-            return;
-        }
-        onPairResponseSuccess(subOp, address);
-        runOnUiThread(() -> {
-            dismissWaitingDialog();
-            adapter.notifyDataSetChanged();
-        });
-        mesh.saveOrUpdate();
-    }
+//    private void onPairConfirm(int address, byte[] params) {
+//        MeshLogger.d("onPairConfirm ---- ");
+//        if (params.length < 2) {
+//            MeshLogger.d("params len error");
+//            return;
+//        }
+//        byte subOp = params[0];
+//        byte st = params[1];
+//        if (st != EH_PAIR_ST_SUCCESS) {
+//            MeshLogger.d("setting rsp error : " + st);
+//            return;
+//        }
+//        onPairResponseSuccess(subOp, address);
+//        runOnUiThread(() -> {
+//            dismissWaitingDialog();
+//            adapter.notifyDataSetChanged();
+//        });
+//        saveNodeInfo();
+//    }
 
-    private void onPairResponseSuccess(int subOp, int address) {
-        MeshLogger.d(String.format("onPairResponseSuccess : settingOp=0x%02X  subOp=0x%02X", settingOp, subOp));
+    private void onPairResponseSuccess(int address) {
+        MeshLogger.d(String.format("onPairResponseSuccess : settingOp=0x%02X", settingOp));
         if (settingOp == 0) return;
         switch (settingOp) {
-            case SETTING_OP_ADD_PAIR_PUB:
-            case SETTING_OP_ADD_PUB:
-                if (subOp == SwitchUtils.SUB_OP_PAIR_CONFIRM) {
-                    switchLight.updateLightState(address, SwitchUtils.SWITCH_STATE_PUBLISH_SET_COMPLETE);
-                }
+            case SETTING_OP_PAIR:
+                switchLight.updateLightState(address, SwitchUtils.SWITCH_STATE_PAIR_COMPLETE);
                 break;
-            /*case SETTING_OP_DEL_PUB:
-                if (subOp == SwitchUtils.SUB_OP_PAIR_CONFIRM) {
-                    switchLight.updateLightState(address, SwitchUtils.SWITCH_STATE_PAIR_COMPLETE);
-                }
-                break;*/
-            case SETTING_OP_DEL_PAIR:
-                if (subOp == SwitchUtils.SUB_OP_PAIR_DELETE) {
-                    switchLight.updateLightState(address, SwitchUtils.SWITCH_STATE_UNPAIRED);
-                }
+            case SETTING_OP_PUB:
+                switchLight.updateLightState(address, SwitchUtils.SWITCH_STATE_PUBLISH_SET_COMPLETE);
+                break;
+            case SETTING_OP_DEL:
+                switchLight.updateLightState(address, SwitchUtils.SWITCH_STATE_UNPAIRED);
                 break;
         }
         receivedRsp.add(address);
+        runOnUiThread(() -> {
+            adapter.notifyDataSetChanged();
+        });
+
+        saveNodeInfo();
         if (receivedRsp.size() >= onlineCount) {
-            mHandler.removeCallbacks(SET_SWITCH_TIMEOUT_TASK);
             onSaveComplete(true);
         }
+    }
+
+    private void saveNodeInfo() {
+        switchLight.save();
     }
 }

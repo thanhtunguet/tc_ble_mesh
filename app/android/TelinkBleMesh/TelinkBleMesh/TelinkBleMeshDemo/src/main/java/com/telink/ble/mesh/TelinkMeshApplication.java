@@ -32,7 +32,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.telink.ble.mesh.core.message.MeshSigModel;
+import com.telink.ble.mesh.core.message.MeshStatus;
 import com.telink.ble.mesh.core.message.NotificationMessage;
+import com.telink.ble.mesh.core.message.Opcode;
 import com.telink.ble.mesh.core.message.StatusMessage;
 import com.telink.ble.mesh.core.message.generic.LevelStatusMessage;
 import com.telink.ble.mesh.core.message.generic.OnOffStatusMessage;
@@ -55,6 +57,7 @@ import com.telink.ble.mesh.model.OnlineState;
 import com.telink.ble.mesh.model.UnitConvert;
 import com.telink.ble.mesh.model.db.MeshInfoService;
 import com.telink.ble.mesh.model.db.ObjectBox;
+import com.telink.ble.mesh.ui.eh.EhRspStatusMessage;
 import com.telink.ble.mesh.util.MeshLogger;
 
 import java.lang.reflect.Constructor;
@@ -90,6 +93,7 @@ public class TelinkMeshApplication extends MeshApplication {
         AppCrashHandler.init(this);
         closePErrorDialog();
         regActLfCb();
+        MeshStatus.Container.register(Opcode.VD_EH_PAIR_STS.value, EhRspStatusMessage.class);
     }
 
     /**

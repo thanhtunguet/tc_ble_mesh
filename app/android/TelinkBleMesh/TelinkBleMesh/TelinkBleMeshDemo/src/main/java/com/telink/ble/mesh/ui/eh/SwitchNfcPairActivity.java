@@ -248,7 +248,7 @@ public final class SwitchNfcPairActivity extends BaseActivity {
         confirmDialogBuilder.setNegativeButton("Cancel", (dialog, which) -> finish());
         confirmDialogBuilder.setPositiveButton("OK", (dialog, which) -> {
             Intent intent = new Intent(this, SwitchSettingActivity.class);
-            intent.putExtra("meshAddress", light.meshAddress);
+            intent.putExtra("deviceAddress", light.meshAddress);
             setResult(RESULT_OK, intent);
             finish();
             startActivity(intent);

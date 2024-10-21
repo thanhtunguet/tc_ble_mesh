@@ -136,6 +136,7 @@ public class BaseActivity extends AppCompatActivity implements EventListener<Str
     }
 
     public void toastMsg(CharSequence s) {
+        MeshLogger.d("toast : " + s.toString());
         if (this.toast != null) {
             this.toast.cancel();
         }

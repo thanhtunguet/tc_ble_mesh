@@ -23,6 +23,7 @@
 package com.telink.ble.mesh.ui.eh;
 
 import com.telink.ble.mesh.core.MeshUtils;
+import com.telink.ble.mesh.core.message.Opcode;
 import com.telink.ble.mesh.model.NodeInfo;
 import com.telink.ble.mesh.util.Arrays;
 import com.telink.ble.mesh.util.MeshLogger;
@@ -42,8 +43,10 @@ public class SwitchUtils {
 
     public static final int SWITCH_ACTION_ON_OFF = 0x00;
 
+    // delta lightness
     public static final int SWITCH_ACTION_LIGHTNESS = 0x01;
 
+    // delta ct
     public static final int SWITCH_ACTION_CT = 0x02;
 
     public static final int SWITCH_ACTION_SCENE_RECALL = 0x03;
@@ -81,6 +84,11 @@ public class SwitchUtils {
 
     public static final byte OP_LGT_CMD_LOAD_SCENE = 0x2f;
 
+    enum EhPubSetType {
+        GENERIC_SET,
+        ON_OFF_BUTTONS,
+        DELTA_LEVEL_BUTTONS,
+    }
 
     public static boolean isSwitch(NodeInfo light) {
         if (light.macAddress == null) return false;
@@ -142,7 +150,7 @@ public class SwitchUtils {
 
     /**
      * 3 actions
-     * 12|3|4
+     * 01|2|3
      *
      * @return
      */
@@ -183,7 +191,7 @@ public class SwitchUtils {
 
     /**
      * 3 actions
-     * 1|2|34
+     * 0|1|23
      *
      * @return
      */
@@ -299,41 +307,54 @@ public class SwitchUtils {
      * @param action
      * @return
      */
-    public static byte[] getGenericPubParams(SwitchAction action) {
+    public static byte[] getPubParams(SwitchAction action) {
         switch (action.action) {
             case SWITCH_ACTION_ON_OFF:
                 return new byte[]{(byte) action.value};
             case SWITCH_ACTION_LIGHTNESS:
-//                return new byte[]{SUB_OP_PUB_DELTA_LIGHTNESS, (byte) action.value};
-                return new byte[]{0x00, (byte) action.value, 0x00};
+                return MeshUtils.integer2Bytes(action.value * 65535 / 100, 4, ByteOrder.LITTLE_ENDIAN);
             case SWITCH_ACTION_CT:
-                return new byte[]{0x00, (byte) action.value, 0x00};
+                return MeshUtils.integer2Bytes(action.value * 65535 / 100, 4, ByteOrder.LITTLE_ENDIAN);
             case SWITCH_ACTION_SCENE_RECALL:
                 return new byte[]{(byte) action.value};
         }
         return new byte[]{0x00};
     }
 
-    public static byte getGenericOp(SwitchAction action) {
+    public static int getGenericOp(SwitchAction action) {
         switch (action.action) {
             case SWITCH_ACTION_ON_OFF:
-                return 0x10;
+                return Opcode.G_ONOFF_SET_NOACK.value;
 
             case SWITCH_ACTION_LIGHTNESS:
-                return 0x0C;
+                return Opcode.G_DELTA_SET_NOACK.value;
 
             case SWITCH_ACTION_CT:
-                return 0x0D;
+                return Opcode.G_DELTA_SET_NOACK.value;
 
             case SWITCH_ACTION_SCENE_RECALL:
-                return OP_LGT_CMD_LOAD_SCENE;
+                return Opcode.SCENE_RECALL_NOACK.value;
         }
         return 0;
     }
 
+    public static boolean hasTid(SwitchAction action) {
+        if (action.action == SWITCH_ACTION_SCENE_RECALL) {
+            return false;
+        }
+        return true;
+    }
 
-    public static byte[] genSpecialCmd(int address, byte seg, SwitchAction action) {
-        byte subOp = SwitchUtils.getPublishSubOp(action);
+
+    public static byte[] genSpecialCmd(int address, SwitchAction action) {
+
+        byte cmdType = 0;
+        if (action.action == SWITCH_ACTION_ON_OFF) {
+            cmdType = (byte) EhPubSetType.ON_OFF_BUTTONS.ordinal();
+        } else if (action.action == SWITCH_ACTION_LIGHTNESS || action.action == SWITCH_ACTION_CT) {
+            cmdType = (byte) EhPubSetType.DELTA_LEVEL_BUTTONS.ordinal();
+        }
+
         // 2 bit
         int keyPairEn = 0;
         short pubAddress0 = 0;
@@ -346,40 +367,81 @@ public class SwitchUtils {
             pubAddress1 = (short) action.publishAddress;
         }
 
-
-//        int keyOffset = action.keyIndex;
         int keyOffset = 0;
         byte keyPar = (byte) (keyPairEn | (keyOffset << 4));
 
-        byte value = (byte) action.value;
+        byte[] params = SwitchUtils.getPubParams(action);
+        boolean hasTid = hasTid(action);
+        boolean hasTransAndDelay = false; //  has transition time and delay
 
-        byte[] cmdParams = ByteBuffer.allocate(10).order(ByteOrder.LITTLE_ENDIAN)
-                .put(seg)
-                .put(subOp)
+        int len = 9 + params.length;
+        if (hasTid) {
+            len += 1;
+        }
+        if (hasTransAndDelay) {
+            len += 2;
+        }
+        ByteBuffer bf = ByteBuffer.allocate(len).order(ByteOrder.LITTLE_ENDIAN)
+                .put((byte) (len - 1))
+                .put(cmdType)
                 .putShort((short) address)
                 .put(keyPar)
                 .putShort(pubAddress0)
                 .putShort(pubAddress1)
-                .put(value)
-                .array();
-        MeshLogger.d("params - EH_PairPub : " + Arrays.bytesToHexString(cmdParams, ""));
+                .put(params);
+        if (hasTid) {
+            bf.put((byte) 0); // tid
+        }
+        if (hasTransAndDelay) {
+            bf.put((byte) 0); // transition time
+            bf.put((byte) 0); // delay
+        }
+        byte[] cmdParams = bf.array();
+
+        MeshLogger.d("params - special : " + Arrays.bytesToHexString(cmdParams, ""));
         return cmdParams;
     }
 
-    public static byte[] genGenericCmd(int address, byte seg, SwitchAction action) {
-        byte subOp = SwitchUtils.SUB_OP_PUB_GENERIC;
-        byte b0 = (byte) ((subOp & 0x0F) | ((action.keyIndex & 0x0F) << 4));
-        byte[] params = SwitchUtils.getGenericPubParams(action);
-        byte op = SwitchUtils.getGenericOp(action);
-        byte[] cmdParams = ByteBuffer.allocate(10).order(ByteOrder.LITTLE_ENDIAN)
-                .put(seg)
+    /**
+     * action to generic params
+     *
+     * @param address
+     * @param action
+     * @return
+     */
+    public static byte[] genGenericCmd(int address, SwitchAction action) {
+        byte cmdType = (byte) EhPubSetType.GENERIC_SET.ordinal();
+        byte b0 = (byte) ((cmdType & 0x0F) | ((action.keyIndex & 0x0F) << 4));
+        int op = SwitchUtils.getGenericOp(action);
+
+        byte[] params = SwitchUtils.getPubParams(action);
+        boolean hasTid = hasTid(action);
+        boolean hasTransAndDelay = false; //  has transition time and delay
+
+        int len = 8 + params.length;
+        if (hasTid) {
+            len += 1;
+        }
+        if (hasTransAndDelay) {
+            len += 2;
+        }
+        ByteBuffer bf = ByteBuffer.allocate(len).order(ByteOrder.LITTLE_ENDIAN)
+                .put((byte) (len - 1))
                 .put(b0)
                 .putShort((short) address)
                 .putShort((short) action.publishAddress)
-                .put(op)
-                .put(params)
-                .array();
-        MeshLogger.d("params - gen generic cmd : " + Arrays.bytesToHexString(cmdParams, ""));
-        return cmdParams;
+                .putShort((short) op)
+                .put(params);
+        if (hasTid) {
+            bf.put((byte) 0); // tid
+        }
+        if (hasTransAndDelay) {
+            bf.put((byte) 0); // transition time
+            bf.put((byte) 0); // delay
+        }
+
+        return bf.array();
+//        MeshLogger.d("params - gen generic cmd : " + Arrays.bytesToHexString(cmdParams, ""));
+//        return cmdParams;
     }
 }

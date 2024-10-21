@@ -33,13 +33,18 @@ import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 
+import com.telink.ble.mesh.SharedPreferenceHelper;
+import com.telink.ble.mesh.TelinkMeshApplication;
 import com.telink.ble.mesh.demo.R;
 import com.telink.ble.mesh.foundation.Event;
 import com.telink.ble.mesh.foundation.EventListener;
+import com.telink.ble.mesh.model.GroupInfo;
 import com.telink.ble.mesh.ui.BaseActivity;
 
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -77,6 +82,17 @@ public final class SwitchActionSettingActivity extends BaseActivity implements E
     //    private int keyIndex = 0;
     private SwitchAction switchAction;
 
+    /**
+     * start from c000
+     */
+    private String[] defaultGroups;
+    /**
+     * start from d000
+     */
+    private String[] extendGroups;
+
+    private boolean isLevelServiceEnable;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +105,8 @@ public final class SwitchActionSettingActivity extends BaseActivity implements E
         Toolbar toolbar = findViewById(R.id.title_bar);
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
+        isLevelServiceEnable = SharedPreferenceHelper.isLevelServiceEnable(this);
+        initGroups();
         initView();
         initData();
     }
@@ -262,6 +280,7 @@ public final class SwitchActionSettingActivity extends BaseActivity implements E
             }
         });
         et_pub_adr = findViewById(R.id.et_pub_adr);
+        findViewById(R.id.btn_address).setOnClickListener(v -> showAddressSelectDialog());
         tv_tip = findViewById(R.id.tv_tip);
         et_scene_id = findViewById(R.id.et_scene_id);
         et_scene_id.addTextChangedListener(new TextWatcher() {
@@ -278,6 +297,48 @@ public final class SwitchActionSettingActivity extends BaseActivity implements E
             public void afterTextChanged(Editable s) {
             }
         });
+
+    }
+
+    private void initGroups() {
+        List<GroupInfo> gs1 = TelinkMeshApplication.getInstance().getMeshInfo().groups;
+        defaultGroups = new String[gs1.size() + 1];
+        defaultGroups[0] = "Broadcast(0xFFFF)";
+        for (int i = 0; i < gs1.size(); i++) {
+            defaultGroups[i + 1] = String.format("%s(0x%04X)", gs1.get(i).name, gs1.get(i).address);
+        }
+        List<GroupInfo> gs2 = TelinkMeshApplication.getInstance().getMeshInfo().extendGroups;
+        extendGroups = new String[gs2.size() + 1];
+        extendGroups[0] = "Broadcast(0xFFFF)";
+        for (int i = 0; i < gs2.size(); i++) {
+            extendGroups[i + 1] = String.format("%s(0x%04X)", gs2.get(i).name, gs2.get(i).address);
+        }
+    }
+
+
+    private void showAddressSelectDialog() {
+        String[] items;
+        int action = getCheckedAction();
+        boolean isLevelModel = action == SwitchUtils.SWITCH_ACTION_LIGHTNESS || action == SwitchUtils.SWITCH_ACTION_CT;
+        if (isLevelModel && isLevelServiceEnable) {
+            items = extendGroups;
+        } else {
+            items = defaultGroups;
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setItems(items, (dialog, which) -> {
+            if (which == 0) {
+                et_pub_adr.setText("FFFF");
+                return;
+            }
+            which -= 1;
+            if (isLevelModel && isLevelServiceEnable) {
+                et_pub_adr.setText(String.format("%04X", TelinkMeshApplication.getInstance().getMeshInfo().extendGroups.get(which).address));
+            } else {
+                et_pub_adr.setText(String.format("%04X", TelinkMeshApplication.getInstance().getMeshInfo().groups.get(which).address));
+            }
+        });
+        builder.show();
     }
 
     @Override

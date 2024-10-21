@@ -23,6 +23,8 @@
 package com.telink.ble.mesh.ui.eh;
 
 
+import com.telink.ble.mesh.model.db.MeshInfoService;
+
 import java.io.Serializable;
 
 import io.objectbox.annotation.Entity;
@@ -48,5 +50,13 @@ public final class SwitchAction implements Serializable {
      * default 0xFFFF
      */
     public int publishAddress = 0xFFFF;
+
+    public void updateFromOther(SwitchAction action){
+        this.keyIndex = action.keyIndex;
+        this.keyCount = action.keyCount;
+        this.action = action.action;
+        this.value = action.value;
+        this.publishAddress = action.publishAddress;
+    }
 
 }
