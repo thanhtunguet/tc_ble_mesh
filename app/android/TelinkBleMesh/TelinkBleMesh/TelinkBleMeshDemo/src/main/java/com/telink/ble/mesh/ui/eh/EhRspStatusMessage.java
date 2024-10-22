@@ -39,6 +39,7 @@ public class EhRspStatusMessage extends StatusMessage implements Parcelable {
     public static final byte ST_NOT_ENOUGH_INFO = 5;
     public static final byte ST_PUB_INVALID_ADDRESS = 6;
     public static final byte ST_PUB_INSUFFICIENT_RES = 7;
+    private byte op;
     private byte st; // response status
 
     /**
@@ -54,6 +55,7 @@ public class EhRspStatusMessage extends StatusMessage implements Parcelable {
      * @param in The Parcel object to read the data from.
      */
     protected EhRspStatusMessage(Parcel in) {
+        op = in.readByte();
         st = in.readByte();
     }
 
@@ -80,7 +82,8 @@ public class EhRspStatusMessage extends StatusMessage implements Parcelable {
      */
     @Override
     public void parse(byte[] params) {
-        st = params[0];
+        op = params[0];
+        st = params[1];
     }
 
     /**
@@ -101,6 +104,7 @@ public class EhRspStatusMessage extends StatusMessage implements Parcelable {
      */
     @Override
     public void writeToParcel(Parcel dest, int flags) {
+        dest.writeByte(op);
         dest.writeByte(st);
     }
 

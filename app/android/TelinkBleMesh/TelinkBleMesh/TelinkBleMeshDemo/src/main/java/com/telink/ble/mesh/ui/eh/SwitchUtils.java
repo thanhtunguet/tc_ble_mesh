@@ -339,9 +339,9 @@ public class SwitchUtils {
     }
 
     public static boolean hasTid(SwitchAction action) {
-        if (action.action == SWITCH_ACTION_SCENE_RECALL) {
+        /*if (action.action == SWITCH_ACTION_SCENE_RECALL) {
             return false;
-        }
+        }*/
         return true;
     }
 
@@ -439,9 +439,9 @@ public class SwitchUtils {
             bf.put((byte) 0); // transition time
             bf.put((byte) 0); // delay
         }
-
-        return bf.array();
-//        MeshLogger.d("params - gen generic cmd : " + Arrays.bytesToHexString(cmdParams, ""));
+        byte[] re = bf.array();
+        MeshLogger.d("params - generic : " + Arrays.bytesToHexString(re, ""));
+        return re;
 //        return cmdParams;
     }
 }

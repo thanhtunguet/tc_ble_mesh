@@ -89,7 +89,9 @@ public final class SwitchActionSettingActivity extends BaseActivity implements E
     /**
      * start from d000
      */
-    private String[] extendGroups;
+    private String[] lightnessLevelGroups;
+
+    private String[] ctLevelGroups;
 
     private boolean isLevelServiceEnable;
 
@@ -302,17 +304,24 @@ public final class SwitchActionSettingActivity extends BaseActivity implements E
 
     private void initGroups() {
         List<GroupInfo> gs1 = TelinkMeshApplication.getInstance().getMeshInfo().groups;
-        defaultGroups = new String[gs1.size() + 1];
-        defaultGroups[0] = "Broadcast(0xFFFF)";
+        defaultGroups = new String[gs1.size()];
+//        defaultGroups[0] = "Broadcast(0xFFFF)";
         for (int i = 0; i < gs1.size(); i++) {
-            defaultGroups[i + 1] = String.format("%s(0x%04X)", gs1.get(i).name, gs1.get(i).address);
+            defaultGroups[i] = String.format("%s(0x%04X)", gs1.get(i).name, gs1.get(i).address);
         }
-        List<GroupInfo> gs2 = TelinkMeshApplication.getInstance().getMeshInfo().extendGroups;
-        extendGroups = new String[gs2.size() + 1];
-        extendGroups[0] = "Broadcast(0xFFFF)";
-        for (int i = 0; i < gs2.size(); i++) {
-            extendGroups[i + 1] = String.format("%s(0x%04X)", gs2.get(i).name, gs2.get(i).address);
+        if (isLevelServiceEnable) {
+            List<GroupInfo> gs2 = TelinkMeshApplication.getInstance().getMeshInfo().extendGroups;
+            lightnessLevelGroups = new String[gs1.size()];
+            ctLevelGroups = new String[gs1.size()];
+            GroupInfo lightnessLevelGroup, ctLevelGroup;
+            for (int i = 0; i < gs1.size(); i++) {
+                lightnessLevelGroup = gs2.get(i * 4);
+                ctLevelGroup = gs2.get(i * 4 + 1);
+                lightnessLevelGroups[i] = String.format("%s(0x%04X)", lightnessLevelGroup.name, lightnessLevelGroup.address);
+                ctLevelGroups[i] = String.format("%s(0x%04X)", ctLevelGroup.name, ctLevelGroup.address);
+            }
         }
+
     }
 
 
@@ -320,20 +329,24 @@ public final class SwitchActionSettingActivity extends BaseActivity implements E
         String[] items;
         int action = getCheckedAction();
         boolean isLevelModel = action == SwitchUtils.SWITCH_ACTION_LIGHTNESS || action == SwitchUtils.SWITCH_ACTION_CT;
+
         if (isLevelModel && isLevelServiceEnable) {
-            items = extendGroups;
+            if (action == SwitchUtils.SWITCH_ACTION_LIGHTNESS) {
+                items = lightnessLevelGroups;
+            } else {
+                items = ctLevelGroups;
+            }
         } else {
             items = defaultGroups;
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setItems(items, (dialog, which) -> {
-            if (which == 0) {
-                et_pub_adr.setText("FFFF");
-                return;
-            }
-            which -= 1;
             if (isLevelModel && isLevelServiceEnable) {
-                et_pub_adr.setText(String.format("%04X", TelinkMeshApplication.getInstance().getMeshInfo().extendGroups.get(which).address));
+                if (action == SwitchUtils.SWITCH_ACTION_LIGHTNESS) {
+                    et_pub_adr.setText(String.format("%04X", TelinkMeshApplication.getInstance().getMeshInfo().extendGroups.get(which * 4).address));
+                } else {
+                    et_pub_adr.setText(String.format("%04X", TelinkMeshApplication.getInstance().getMeshInfo().extendGroups.get(which * 4 + 1).address));
+                }
             } else {
                 et_pub_adr.setText(String.format("%04X", TelinkMeshApplication.getInstance().getMeshInfo().groups.get(which).address));
             }
