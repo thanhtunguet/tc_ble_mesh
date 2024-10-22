@@ -1,5 +1,5 @@
 /********************************************************************************************************
- * @file MeshSetAddressMessage.java
+ * @file EhDeleteMessage.java
  *
  * @brief for TLSR chips
  *

@@ -1,5 +1,5 @@
 /********************************************************************************************************
- * @file MeshAddressStatusMessage.java
+ * @file EhRspStatusMessage.java
  *
  * @brief for TLSR chips
  *

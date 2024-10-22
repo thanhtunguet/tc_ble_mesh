@@ -1,5 +1,5 @@
 /********************************************************************************************************
- * @file GroupInfoAdapter.java
+ * @file SwitchActionAdapter.java
  *
  * @brief for TLSR chips
  *

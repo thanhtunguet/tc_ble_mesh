@@ -1,5 +1,5 @@
 /********************************************************************************************************
- * @file MeshCommandUtil.java
+ * @file SwitchUtils.java
  *
  * @brief for TLSR chips
  *

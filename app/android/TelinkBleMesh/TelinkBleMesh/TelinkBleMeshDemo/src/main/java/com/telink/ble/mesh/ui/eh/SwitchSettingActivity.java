@@ -1,5 +1,5 @@
 /********************************************************************************************************
- * @file DeviceScanningActivity.java
+ * @file SwitchSettingActivity.java
  *
  * @brief for TLSR chips
  *
