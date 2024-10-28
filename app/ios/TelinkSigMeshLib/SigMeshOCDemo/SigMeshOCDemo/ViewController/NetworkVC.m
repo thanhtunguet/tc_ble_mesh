@@ -30,14 +30,22 @@
 #import "MeshInfoVC.h"
 #import "ProxyFilterVC.h"
 #import "ActivityIndicatorCell.h"
+#import "ScanCodeVC.h"
+#import "ScanView.h"
+#import "PassiveSwitchDetailVC.h"
+#import "NFCMiFareTagScanVC.h"
 #import "NodeBatchSettingVC.h"
 
 #define kMeshInfo   @"Mesh Info"
 #define kNodeBatchSetting   @"Node Batch Setting"
 #define kSolicitationPDU   @"Solicitation PDU"
+#define kAddEnergyHarvestSwitchByQRCode   @"Add Energy Harvest Switch by QRCode"
+#define kAddEnergyHarvestSwitchByNFC   @"Add Energy Harvest Switch by NFC"
 
 @interface NetworkVC ()<UITableViewDataSource,UITableViewDelegate>
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (strong, nonatomic) ScanCodeVC *scanCodeVC;
+@property (assign, nonatomic) UInt16 address;
 @property (nonatomic, strong) NSMutableArray <NSString *>*source;
 @property (nonatomic, strong) NSMutableArray <NSString *>*iconSource;
 @property (nonatomic, strong) NSMutableArray <NSString *>*vcIdentifiers;
@@ -93,6 +101,10 @@
         vc = [[MeshOTAVC alloc] init];
     } else if ([titleString isEqualToString:@"Proxy Filter"]) {
         vc = [[ProxyFilterVC alloc] init];
+    } else if ([titleString isEqualToString:kAddEnergyHarvestSwitchByQRCode]) {
+        [self pushToScanVC];
+    } else if ([titleString isEqualToString:kAddEnergyHarvestSwitchByNFC]) {
+        [self pushToNFCVC];
     } else {
         vc = [UIStoryboard initVC:self.vcIdentifiers[indexPath.row] storyboard:sb];
         if ([titleString isEqualToString:kMeshInfo]) {
@@ -121,7 +133,7 @@
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-//    self.tabBarController.tabBar.hidden = NO;
+    self.tabBarController.tabBar.hidden = NO;
     [self initData];
     [self.tableView reloadData];
 }
@@ -153,6 +165,12 @@
     [self.source addObject:kSolicitationPDU];
     [self.iconSource addObject:@"ic_publish"];
     [self.vcIdentifiers addObject:@""];
+    [self.source addObject:kAddEnergyHarvestSwitchByQRCode];
+    [self.iconSource addObject:@"ic_qcode"];
+    [self.vcIdentifiers addObject:@""];
+    [self.source addObject:kAddEnergyHarvestSwitchByNFC];
+    [self.iconSource addObject:@"ic_nfc"];
+    [self.vcIdentifiers addObject:@""];
 }
 
 - (void)normalSetting{
@@ -178,6 +196,102 @@
         [TPeripheralManager.share stopAdvertising];
     }
     [self.tableView reloadData];
+}
+
+- (void)pushToScanVC {
+    self.tabBarController.tabBar.hidden = YES;
+    self.scanCodeVC = [ScanCodeVC scanCodeVC];
+    __weak typeof(self) weakSelf = self;
+    [self.scanCodeVC scanDataViewControllerBackBlock:^(id content) {
+        //AnalysisEnOceanDataVC
+        EnOceanInfo *info = [[EnOceanInfo alloc] initWithQRCodeString:(NSString *)content];
+        if (info) {
+            [weakSelf pairEnOceanWithEnOceanInfo:info];
+        } else {
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"BackToMain" object:nil];
+            //hasn't data
+            [weakSelf showTips:@"QRCode is error."];
+        }
+    }];
+    [self.navigationController pushViewController:self.scanCodeVC animated:YES];
+}
+
+- (void)pushToNFCVC {
+    NFCMiFareTagScanVC *vc = [[NFCMiFareTagScanVC alloc] init];
+    __weak typeof(self) weakSelf = self;
+    [vc setConfigSwitchHandler:^(EnOceanInfo * _Nonnull info) {
+        weakSelf.address = info.deviceAddress;
+        [weakSelf showConfigSwitchVC];
+    }];
+    [self.navigationController pushViewController:vc animated:YES];
+}
+
+- (void)pairEnOceanWithEnOceanInfo:(EnOceanInfo *)info {
+    __weak typeof(self) weakSelf = self;
+    SigNodeModel *node = [SigDataSource.share getDeviceWithMacAddress:info.staticSourceAddress];
+    if (node && !node.excluded) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            UIAlertController *alertController = [UIAlertController alertControllerWithTitle:kDefaultAlertTitle message:@"This device had added to app, scan other or back?" preferredStyle:UIAlertControllerStyleAlert];
+            [alertController addAction:[UIAlertAction actionWithTitle:@"Scan Other" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                [weakSelf.scanCodeVC.scanView start];
+            }]];
+            [alertController addAction:[UIAlertAction actionWithTitle:@"Back" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                [[NSNotificationCenter defaultCenter] postNotificationName:@"BackToMain" object:nil];
+            }]];
+            [self presentViewController:alertController animated:YES completion:nil];
+        });
+    } else {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            UIAlertController *alertController = [UIAlertController alertControllerWithTitle:kDefaultAlertTitle message:[NSString stringWithFormat:@"Add this Switch(ID:%@)?", info.staticSourceAddress] preferredStyle:UIAlertControllerStyleAlert];
+            [alertController addAction:[UIAlertAction actionWithTitle:@"Scan Other" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                [weakSelf.scanCodeVC.scanView start];
+            }]];
+            [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                [weakSelf addEnOceanToMeshWithEnOceanInfo:info];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    //back
+                    [[NSNotificationCenter defaultCenter] postNotificationName:@"BackToMain" object:nil];
+                    [weakSelf showConfigSwitchVC];
+                });
+            }]];
+            [self presentViewController:alertController animated:YES completion:nil];
+        });
+    }
+}
+
+- (void)showConfigSwitchVC {
+    __weak typeof(self) weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Add switch successful" message:@"Config this switch now?" preferredStyle:UIAlertControllerStyleAlert];
+        [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            EnOceanInfo *info = [[EnOceanInfo alloc] init];
+            SigNodeModel *node = [SigDataSource.share getNodeWithAddress:weakSelf.address];
+            [info setDictionaryToEnOceanInfo:[node getDictionaryOfSigNodeModel]];
+            if (info) {
+                PassiveSwitchDetailVC *tempCon = [[PassiveSwitchDetailVC alloc] initWithNibName:@"PassiveSwitchDetailVC" bundle:[NSBundle mainBundle]];
+                tempCon.oldEnOceanInfo = info;
+                tempCon.nodeModel = node;
+                [self.navigationController pushViewController:tempCon animated:YES];
+            } else {
+                [self showTips:@"No passive switch information!"];
+            }
+        }]];
+        [alertController addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+
+        }]];
+        [self presentViewController:alertController animated:YES completion:nil];
+    });
+}
+
+- (BOOL)addEnOceanToMeshWithEnOceanInfo:(EnOceanInfo *)info {
+    SigNodeModel *model = [[SigNodeModel alloc] initEnOceanNodeWithEnOceanInfo:info];
+    if (model) {
+        [SigMeshLib.share.dataSource addAndSaveNodeToMeshNetworkWithDeviceModel:model];
+        self.address = model.address;
+        return YES;
+    } else {
+        return NO;
+    }
 }
 
 @end

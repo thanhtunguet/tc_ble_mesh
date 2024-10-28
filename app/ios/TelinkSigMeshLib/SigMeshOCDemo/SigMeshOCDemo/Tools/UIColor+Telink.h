@@ -73,6 +73,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (UIColor *)telinkTitleGray;
 
++ (UIColor*)telinkTabBarBackgroundColor;
+
 @end
 
 NS_ASSUME_NONNULL_END

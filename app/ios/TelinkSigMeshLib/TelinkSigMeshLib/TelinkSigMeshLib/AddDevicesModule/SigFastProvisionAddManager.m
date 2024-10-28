@@ -533,15 +533,9 @@
     UInt16 tem = delayMillisecond;
     NSData *temData = [NSData dataWithBytes:&tem length:2];
     IniCommandModel *model = [[IniCommandModel alloc] initVendorModelIniCommandWithNetkeyIndex:SigMeshLib.share.dataSource.defaultNetKeyA.index appkeyIndex:SigMeshLib.share.dataSource.defaultAppKeyA.index retryCount:SigMeshLib.share.dataSource.defaultRetryCount responseMax:0 address:kMeshAddress_allNodes opcode:SigOpCode_VendorID_MeshResetNetwork vendorId:kCompanyID responseOpcode:0 tidPosition:0 tid:0 commandData:temData];
-//    if (self.currentConnectedNodeIsUnprovisioned) {
-//        model.curNetkey = SigMeshLib.share.dataSource.defaultNetKeyA;
-//        model.curAppkey = SigMeshLib.share.dataSource.defaultAppKeyA;
-//        model.curIvIndex = SigMeshLib.share.dataSource.defaultIvIndexA;
-//    } else {
-        model.curNetkey = SigMeshLib.share.dataSource.curNetkeyModel;
-        model.curAppkey = SigMeshLib.share.dataSource.curAppkeyModel;
-        model.curIvIndex = SigMeshLib.share.dataSource.curNetkeyModel.ivIndex;
-//    }
+    model.curNetkey = SigMeshLib.share.dataSource.curNetkeyModel;
+    model.curAppkey = SigMeshLib.share.dataSource.curAppkeyModel;
+    model.curIvIndex = SigMeshLib.share.dataSource.curNetkeyModel.ivIndex;
     [SDKLibCommand sendIniCommandModel:model successCallback:successCallback resultCallback:resultCallback];
 }
 

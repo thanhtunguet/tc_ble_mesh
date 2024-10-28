@@ -137,4 +137,12 @@
     }
 }
 
++ (UIColor *)telinkTabBarBackgroundColor {
+    if (@available(iOS 11.0, *)) {
+        return [UIColor colorNamed:@"telinkTabBarBackgroundColor"];
+    } else {
+        return HEX(#F7F7F7);
+    }
+}
+
 @end
