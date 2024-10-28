@@ -307,22 +307,22 @@
         case SigFirmwareUpdateProgressFirmwareUpdateStart:
             tem = @"firmwareUpdateStart(Distributor->updating node(s))";
             break;
-        case SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBTransferGet:
+        case SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBTransferGet:
             tem = @"BLOBTransferGet(Distributor->updating node(s))";
             break;
-        case SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBInformationGet:
+        case SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBInformationGet:
             tem = @"BLOBInformationGet(Distributor->updating node(s))";
             break;
-        case SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBTransferStart:
+        case SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBTransferStart:
             tem = @"BLOBTransferStart(Distributor->updating node(s))";
             break;
-        case SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBBlockStart:
+        case SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBBlockStart:
             tem = @"BLOBBlockStart(Distributor->updating node(s))";
             break;
-        case SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBChunkTransfer:
+        case SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBChunkTransfer:
             tem = @"BLOBChunkTransfer(Distributor->updating node(s))";
             break;
-        case SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBBlockGet:
+        case SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBBlockGet:
             tem = @"BLOBBlockGet(Distributor->updating node(s))";
             break;
         case SigFirmwareUpdateProgressFirmwareDistributionReceiversGet:
@@ -374,7 +374,7 @@
             [self createErrorWithString:@"Node is disconnected, MeshOTA fail"];
             [self performSelector:@selector(firmwareUpdateFailAction) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
         } else {
-            if ((self.firmwareUpdateProgress >= SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBTransferGet && self.firmwareUpdateProgress != SigFirmwareUpdateProgressFirmwareDistributionApply) || self.firmwareUpdateProgress == SigFirmwareUpdateProgressCheckLastFirmwareUpdateStatue || self.firmwareUpdateProgress == SigFirmwareUpdateProgressInitiatorToDistributorBLOBChunkTransfer || self.firmwareUpdateProgress == SigFirmwareUpdateProgressFirmwareDistributionGet) {
+            if ((self.firmwareUpdateProgress >= SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBTransferGet && self.firmwareUpdateProgress != SigFirmwareUpdateProgressFirmwareDistributionApply) || self.firmwareUpdateProgress == SigFirmwareUpdateProgressCheckLastFirmwareUpdateStatue || self.firmwareUpdateProgress == SigFirmwareUpdateProgressInitiatorToDistributorBLOBChunkTransfer || self.firmwareUpdateProgress == SigFirmwareUpdateProgressFirmwareDistributionGet) {
                 //处理逻辑：当设备端做为Distributor且处于Distributor的处理阶段时，即使APP断开与Distributor的连接也不会进入失败流程，而是重连原来的直连节点
                 //||SigFirmwareUpdateProgressFirmwareDistributionGet,需要重启时，
                 if (self.firmwareUpdateProgress == SigFirmwareUpdateProgressFirmwareDistributionGet && self.waitNodeReboot) {
@@ -443,7 +443,7 @@
     if ([message isKindOfClass:[SigBLOBPartialBlockReport class]]) {
         TelinkLogVerbose(@"MeshOTAManager Receive:%@,source=%d,destination=%d",[LibTools convertDataToHexStr:message.parameters],source,destination);
         self.BLOBPartialBlockReport = (SigBLOBPartialBlockReport *)message;
-        if (self.isMeshOTAing && self.transferModeOfUpdateNodes == SigTransferModeState_pullBLOBTransferMode && self.firmwareUpdateProgress >= SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBBlockStart && self.firmwareUpdateProgress <= SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBBlockGet) {
+        if (self.isMeshOTAing && self.transferModeOfUpdateNodes == SigTransferModeState_pullBLOBTransferMode && self.firmwareUpdateProgress >= SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBBlockStart && self.firmwareUpdateProgress <= SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBBlockGet) {
             if (self.BLOBPartialBlockReport.encodedMissingChunks) {
 //                TelinkLogError(@"=====chunk，接收到地址%d需要发送的chunk=%@",source,self.BLOBPartialBlockReport.encodedMissingChunks);
                 self.losePacketsDict[@(source)] = self.BLOBPartialBlockReport.encodedMissingChunks;
@@ -452,7 +452,7 @@
             } else if (self.chunkIndex != 0) {
                 //原因：有时候，发送start时就返回一个空的BLOBPartialBlockReport，导致APP走到查询流程。
                     //当前block发送完成，检查是否漏包，不漏则blockIndex加一进行下一个block的发送。
-                [self performSelector:@selector(distributorToUpdatingNodesBLOBBlockGet) onThread:self.meshOTAThread withObject:nil waitUntilDone:NO];
+                [self performSelector:@selector(distributorToUpdatingNodeBLOBBlockGet) onThread:self.meshOTAThread withObject:nil waitUntilDone:NO];
             }
         }
     }
@@ -472,7 +472,7 @@
     if (self.losePacketsDict.count == 0) {
         return;
     }
-    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBChunkTransfer;
+    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBChunkTransfer;
     TelinkLogInfo(@"\n\n==========firmware update:step%d.2\n\n",self.firmwareUpdateProgress);
 
     UInt16 destination = [self.losePacketsDict.allKeys.firstObject intValue];
@@ -791,19 +791,19 @@
             }
         }
             break;
-        case SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBTransferGet:
-        case SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBTransferStart:
-        case SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBBlockStart:
-        case SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBBlockGet:
+        case SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBTransferGet:
+        case SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBTransferStart:
+        case SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBBlockStart:
+        case SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBBlockGet:
         case SigFirmwareUpdateProgressFirmwareDistributionReceiversGet:
         {
             [self performSelector:@selector(fiemwareUpdateFirmwareDistributionReceiversGet) onThread:self.meshOTAThread withObject:nil waitUntilDone:NO];
         }
             break;
-        case SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBChunkTransfer:
+        case SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBChunkTransfer:
         {
             if (self.phoneIsDistributor) {
-                [self performSelector:@selector(distributorToUpdatingNodesBLOBChunkTransfer) onThread:self.meshOTAThread withObject:nil waitUntilDone:NO];
+                [self performSelector:@selector(distributorToUpdatingNodeBLOBChunkTransfer) onThread:self.meshOTAThread withObject:nil waitUntilDone:NO];
             } else {
                 [self performSelector:@selector(fiemwareUpdateFirmwareDistributionReceiversGet) onThread:self.meshOTAThread withObject:nil waitUntilDone:NO];
             }
@@ -2271,7 +2271,7 @@
 }
 
 - (void)firmwareUpdateFirmwareUpdateStartSuccessAction {
-    [self performSelector:@selector(distributorToUpdatingNodesBLOBTransferGet) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
+    [self performSelector:@selector(distributorToUpdatingNodeBLOBTransferGet) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
 }
 
 - (void)firmwareUpdateFirmwareUpdateStartFailAction {
@@ -2283,8 +2283,8 @@
 //参考原来meshOTA的BLOB逻辑
 
 #pragma mark - Firmware update step16:BLOBTransferGet(Distributor->updating node(s))
-- (void)distributorToUpdatingNodesBLOBTransferGet {
-    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBTransferGet;
+- (void)distributorToUpdatingNodeBLOBTransferGet {
+    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBTransferGet;
     TelinkLogInfo(@"\n\n==========firmware update:step%d\n\n",self.firmwareUpdateProgress);
 
     __block BOOL hasSuccess = NO;
@@ -2315,7 +2315,7 @@
                     }
                 }
             } resultCallback:^(BOOL isResponseAll, NSError * _Nullable error) {
-                if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBTransferGet) {
+                if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBTransferGet) {
                     TelinkLogInfo(@"isResponseAll=%d,error=%@",isResponseAll,error);
                     dispatch_semaphore_signal(weakSelf.semaphore);
                 }
@@ -2330,28 +2330,28 @@
         }
     }
     if (hasSuccess) {
-        [self distributorToUpdatingNodesBLOBTransferGetSuccessAction];
+        [self distributorToUpdatingNodeBLOBTransferGetSuccessAction];
     } else {
         if (!self.failError) {
             [self createErrorWithString:@"All nodes have not response SigBLOBTransferStatus"];
         }
-        [self distributorToUpdatingNodesBLOBTransferGetFailAction];
+        [self distributorToUpdatingNodeBLOBTransferGetFailAction];
     }
 }
 
-- (void)distributorToUpdatingNodesBLOBTransferGetSuccessAction {
-    [self performSelector:@selector(distributorToUpdatingNodesBLOBInformationGet) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
+- (void)distributorToUpdatingNodeBLOBTransferGetSuccessAction {
+    [self performSelector:@selector(distributorToUpdatingNodeBLOBInformationGet) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
 }
 
-- (void)distributorToUpdatingNodesBLOBTransferGetFailAction {
+- (void)distributorToUpdatingNodeBLOBTransferGetFailAction {
     [self performSelector:@selector(firmwareUpdateFailAction) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
 }
 
 //参考原来meshOTA的BLOB逻辑
 
 #pragma mark - Firmware update step17:BLOBInformationGet(Distributor->updating node(s))
-- (void)distributorToUpdatingNodesBLOBInformationGet {
-    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBInformationGet;
+- (void)distributorToUpdatingNodeBLOBInformationGet {
+    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBInformationGet;
     TelinkLogInfo(@"\n\n==========firmware update:step%d\n\n",self.firmwareUpdateProgress);
 
     __block BOOL hasSuccess = NO;
@@ -2399,7 +2399,7 @@
                     }
                 }
             } resultCallback:^(BOOL isResponseAll, NSError * _Nullable error) {
-                if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBInformationGet) {
+                if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBInformationGet) {
                     TelinkLogInfo(@"isResponseAll=%d,error=%@",isResponseAll,error);
                     dispatch_semaphore_signal(weakSelf.semaphore);
                 }
@@ -2433,31 +2433,31 @@
             }
 
             //存在合法的blockSizeLog和chunkSize，进行下一步流程。
-            [self distributorToUpdatingNodesBLOBInformationGetSuccessAction];
+            [self distributorToUpdatingNodeBLOBInformationGetSuccessAction];
 
         } else {
             self.failError = [NSError errorWithDomain:[NSString stringWithFormat:@"fail in BLOBInformationGet(Distributor->updating node(s)), BLOBInformation is empty."] code:-weakSelf.firmwareUpdateProgress userInfo:nil];
-            [self distributorToUpdatingNodesBLOBInformationGetFailAction];
+            [self distributorToUpdatingNodeBLOBInformationGetFailAction];
         }
     } else {
         [self createErrorWithString:@"All nodes have not response SigBLOBInformationStatus"];
-        [self distributorToUpdatingNodesBLOBInformationGetFailAction];
+        [self distributorToUpdatingNodeBLOBInformationGetFailAction];
     }
 }
 
-- (void)distributorToUpdatingNodesBLOBInformationGetSuccessAction {
-    [self performSelector:@selector(distributorToUpdatingNodesBLOBTransferStart) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
+- (void)distributorToUpdatingNodeBLOBInformationGetSuccessAction {
+    [self performSelector:@selector(distributorToUpdatingNodeBLOBTransferStart) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
 }
 
-- (void)distributorToUpdatingNodesBLOBInformationGetFailAction {
+- (void)distributorToUpdatingNodeBLOBInformationGetFailAction {
     [self performSelector:@selector(firmwareUpdateFailAction) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
 }
 
 //参考原来meshOTA的BLOB逻辑
 
 #pragma mark - Firmware update step18:BLOBTransferStart(Distributor->updating node(s))
-- (void)distributorToUpdatingNodesBLOBTransferStart {
-    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBTransferStart;
+- (void)distributorToUpdatingNodeBLOBTransferStart {
+    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBTransferStart;
     TelinkLogInfo(@"\n\n==========firmware update:step%d\n\n",self.firmwareUpdateProgress);
 
     __block BOOL hasSuccess = NO;
@@ -2489,7 +2489,7 @@
                         }
                     }
                 } resultCallback:^(BOOL isResponseAll, NSError * _Nullable error) {
-                    if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBTransferStart) {
+                    if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBTransferStart) {
                         TelinkLogInfo(@"isResponseAll=%d,error=%@",isResponseAll,error);
                         dispatch_semaphore_signal(weakSelf.semaphore);
                     }
@@ -2504,30 +2504,30 @@
             }
     }
     if (hasSuccess) {
-        [self distributorToUpdatingNodesBLOBTransferStartSuccessAction];
+        [self distributorToUpdatingNodeBLOBTransferStartSuccessAction];
     } else {
         [self createErrorWithString:@"All nodes have not response SigBLOBTransferStatus"];
-        [self distributorToUpdatingNodesBLOBTransferStartFailAction];
+        [self distributorToUpdatingNodeBLOBTransferStartFailAction];
     }
 }
 
-- (void)distributorToUpdatingNodesBLOBTransferStartSuccessAction {
+- (void)distributorToUpdatingNodeBLOBTransferStartSuccessAction {
     self.blockIndex = 0;
     double blockSize = (double)pow(2, self.blockSizeLog);
     self.allBlockCount = ceil(self.firmwareDataOnDistributor.length / blockSize);
     self.retryCountInBLOBChunkTransfer = 0;
-    [self performSelector:@selector(distributorToUpdatingNodesBLOBBlockStart) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
+    [self performSelector:@selector(distributorToUpdatingNodeBLOBBlockStart) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
 }
 
-- (void)distributorToUpdatingNodesBLOBTransferStartFailAction {
+- (void)distributorToUpdatingNodeBLOBTransferStartFailAction {
     [self performSelector:@selector(firmwareUpdateFailAction) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
 }
 
 //参考原来meshOTA的BLOB逻辑
 
 #pragma mark - Firmware update step19:BLOBBlockStart(Distributor->updating node(s))
-- (void)distributorToUpdatingNodesBLOBBlockStart {
-    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBBlockStart;
+- (void)distributorToUpdatingNodeBLOBBlockStart {
+    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBBlockStart;
     TelinkLogInfo(@"\n\n==========firmware update:step%d\n\n",self.firmwareUpdateProgress);
 
     self.chunkIndex = 0;
@@ -2574,7 +2574,7 @@
                     }
                 }
             } resultCallback:^(BOOL isResponseAll, NSError * _Nullable error) {
-                if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBBlockStart) {
+                if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBBlockStart) {
                     TelinkLogInfo(@"isResponseAll=%d,error=%@",isResponseAll,error);
                     dispatch_semaphore_signal(weakSelf.semaphore);
                 }
@@ -2591,10 +2591,10 @@
     if (SigBearer.share.isOpen) {
         if (!isPullMode) {
             if (hasSuccess) {
-                [self distributorToUpdatingNodesBLOBBlockStartSuccessAction];
+                [self distributorToUpdatingNodeBLOBBlockStartSuccessAction];
             } else {
                 [self createErrorWithString:@"All nodes have not response SigBLOBBlockStatus"];
-                [self distributorToUpdatingNodesBLOBBlockStartFailAction];
+                [self distributorToUpdatingNodeBLOBBlockStartFailAction];
             }
         } else {
             self.chunksCountOfCurrentBlock = ceil(self.currentBlockData.length / (double)self.chunkSize);
@@ -2605,25 +2605,25 @@
     }
 }
 
-- (void)distributorToUpdatingNodesBLOBBlockStartSuccessAction {
+- (void)distributorToUpdatingNodeBLOBBlockStartSuccessAction {
     if (self.transferModeOfUpdateNodes == SigTransferModeState_pushBLOBTransferMode) {
         self.chunkIndex = 0;
-        [self performSelector:@selector(distributorToUpdatingNodesBLOBChunkTransfer) onThread:self.meshOTAThread withObject:nil waitUntilDone:NO];
+        [self performSelector:@selector(distributorToUpdatingNodeBLOBChunkTransfer) onThread:self.meshOTAThread withObject:nil waitUntilDone:NO];
     } else {
         //pull模式，等待Report
         self.BLOBPartialBlockReport = nil;
     }
 }
 
-- (void)distributorToUpdatingNodesBLOBBlockStartFailAction {
+- (void)distributorToUpdatingNodeBLOBBlockStartFailAction {
     [self performSelector:@selector(firmwareUpdateFailAction) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
 }
 
 //参考原来meshOTA的BLOB逻辑
 
 #pragma mark - Firmware update step20:BLOBChunkTransfer(Distributor->updating node(s))
-- (void)distributorToUpdatingNodesBLOBChunkTransfer {
-    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBChunkTransfer;
+- (void)distributorToUpdatingNodeBLOBChunkTransfer {
+    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBChunkTransfer;
     TelinkLogInfo(@"\n\n==========firmware update:step%d\n\n",self.firmwareUpdateProgress);
 
     self.chunksCountOfCurrentBlock = ceil(self.currentBlockData.length / (double)self.chunkSize);
@@ -2683,7 +2683,7 @@
 
         BOOL sendBySegmentPdu = NO;
         self.messageHandle = [SDKLibCommand BLOBChunkTransferWithDestination:destination chunkNumber:self.chunkIndex chunkData:chunkData sendBySegmentPdu:sendBySegmentPdu retryCount:0 responseMaxCount:0 resultCallback:^(BOOL isResponseAll, NSError * _Nullable error) {
-            if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBChunkTransfer) {
+            if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBChunkTransfer) {
                 TelinkLogInfo(@"isResponseAll=%d,error=%@",isResponseAll,error);
                 if (error) {
                     [self createErrorWithString:[NSString stringWithFormat:@"App transfer BLOBChunk to destination=0x%04X fail", destination]];
@@ -2736,12 +2736,12 @@
 
     if (!hasSuccess) {
         if (SigBearer.share.isOpen) {
-            [self distributorToUpdatingNodesBLOBChunkTransferFailAction];
+            [self distributorToUpdatingNodeBLOBChunkTransferFailAction];
         } else {
             return;
         }
     } else {
-        [self distributorToUpdatingNodesBLOBChunkTransferSuccessFinishAction];
+        [self distributorToUpdatingNodeBLOBChunkTransferSuccessFinishAction];
     }
 }
 
@@ -2765,8 +2765,8 @@
     self.firmwareDistributionReceiversList = responseMessage;
 }
 
-- (void)distributorToUpdatingNodesBLOBChunkTransferWithLosePackets {
-    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBChunkTransfer;
+- (void)distributorToUpdatingNodeBLOBChunkTransferWithLosePackets {
+    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBChunkTransfer;
     TelinkLogInfo(@"\n\n==========firmware update:step%d.1\n\n",self.firmwareUpdateProgress);
     __block BOOL hasFail = NO;
     self.successActionInCurrentProgress = 0;
@@ -2801,7 +2801,7 @@
                 }
                 BOOL sendBySegmentPdu = NO;
                 self.messageHandle = [SDKLibCommand BLOBChunkTransferWithDestination:destination chunkNumber:self.chunkIndex chunkData:chunkData sendBySegmentPdu:sendBySegmentPdu retryCount:0 responseMaxCount:0 resultCallback:^(BOOL isResponseAll, NSError * _Nullable error) {
-                    if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBChunkTransfer) {
+                    if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBChunkTransfer) {
                         TelinkLogInfo(@"isResponseAll=%d,error=%@",isResponseAll,error);
                         if (error) {
                             hasFail = YES;
@@ -2851,26 +2851,26 @@
         }
     }
     if (hasFail) {
-        [self distributorToUpdatingNodesBLOBChunkTransferFailAction];
+        [self distributorToUpdatingNodeBLOBChunkTransferFailAction];
     } else {
-        [self distributorToUpdatingNodesBLOBChunkTransferSuccessFinishAction];
+        [self distributorToUpdatingNodeBLOBChunkTransferSuccessFinishAction];
     }
 }
 
 
-- (void)distributorToUpdatingNodesBLOBChunkTransferSuccessFinishAction {
-    [self performSelector:@selector(distributorToUpdatingNodesBLOBBlockGet) onThread:self.meshOTAThread withObject:nil waitUntilDone:NO];
+- (void)distributorToUpdatingNodeBLOBChunkTransferSuccessFinishAction {
+    [self performSelector:@selector(distributorToUpdatingNodeBLOBBlockGet) onThread:self.meshOTAThread withObject:nil waitUntilDone:NO];
 }
 
-- (void)distributorToUpdatingNodesBLOBChunkTransferFailAction {
+- (void)distributorToUpdatingNodeBLOBChunkTransferFailAction {
     [self performSelector:@selector(firmwareUpdateFailAction) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
 }
 
 //参考原来meshOTA的BLOB逻辑
 
 #pragma mark - Firmware update step21:BLOBBlockGet(Distributor->updating node(s))
-- (void)distributorToUpdatingNodesBLOBBlockGet {
-    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBBlockGet;
+- (void)distributorToUpdatingNodeBLOBBlockGet {
+    self.firmwareUpdateProgress = SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBBlockGet;
     TelinkLogInfo(@"\n\n==========firmware update:step%d\n\n",self.firmwareUpdateProgress);
 
     self.losePacketsDict = [NSMutableDictionary dictionary];
@@ -2927,7 +2927,7 @@
                     }
                 }
             } resultCallback:^(BOOL isResponseAll, NSError * _Nullable error) {
-                if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodesBLOBBlockGet) {
+                if (weakSelf.firmwareUpdateProgress == SigFirmwareUpdateProgressDistributorToUpdatingNodeBLOBBlockGet) {
                     TelinkLogInfo(@"isResponseAll=%d,error=%@",isResponseAll,error);
                     if (error) {
                         if (![weakSelf.failAddressArray containsObject:nodeAddress]) {
@@ -2972,28 +2972,28 @@
                 }
                 TelinkLogInfo(@"newLoseChunkIndexes=%@",newLoseChunkIndexes);
                 self.losePacketsDict = [NSMutableDictionary dictionaryWithDictionary:newDict];
-                [self distributorToUpdatingNodesBLOBChunkTransferWithLosePackets];
+                [self distributorToUpdatingNodeBLOBChunkTransferWithLosePackets];
             }else{
-                [self distributorToUpdatingNodesBLOBBlockGetFailAction];
+                [self distributorToUpdatingNodeBLOBBlockGetFailAction];
             }
         } else {
-            [self distributorToUpdatingNodesBLOBBlockGetFailAction];
+            [self distributorToUpdatingNodeBLOBBlockGetFailAction];
         }
     } else {
         if (hasSuccess) {
-            [self distributorToUpdatingNodesBLOBBlockGetSuccessAction];
+            [self distributorToUpdatingNodeBLOBBlockGetSuccessAction];
         } else {
-            [self distributorToUpdatingNodesBLOBBlockGetFailAction];
+            [self distributorToUpdatingNodeBLOBBlockGetFailAction];
         }
     }
 }
 
-- (void)distributorToUpdatingNodesBLOBBlockGetSuccessAction {
+- (void)distributorToUpdatingNodeBLOBBlockGetSuccessAction {
     if (self.blockIndex < self.allBlockCount - 1) {
         // send next block data
         self.blockIndex ++;
         self.retryCountInBLOBChunkTransfer = 0;
-        [self performSelector:@selector(distributorToUpdatingNodesBLOBBlockStart) onThread:self.meshOTAThread withObject:nil waitUntilDone:NO];
+        [self performSelector:@selector(distributorToUpdatingNodeBLOBBlockStart) onThread:self.meshOTAThread withObject:nil waitUntilDone:NO];
     } else if (self.blockIndex == self.allBlockCount - 1) {
         // all blocks had send
         TelinkLogVerbose(@"");
@@ -3004,11 +3004,11 @@
     }
 }
 
-- (void)distributorToUpdatingNodesBLOBBlockGetFailAction {
+- (void)distributorToUpdatingNodeBLOBBlockGetFailAction {
     if (self.retryCountInBLOBChunkTransfer < kRetryCountInBLOBChunkTransfer) {
         TelinkLogInfo(@"retry send block.");
         self.retryCountInBLOBChunkTransfer ++;
-        [self performSelector:@selector(distributorToUpdatingNodesBLOBBlockStart) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
+        [self performSelector:@selector(distributorToUpdatingNodeBLOBBlockStart) onThread:self.meshOTAThread withObject:nil waitUntilDone:YES];
     } else {
         TelinkLogInfo(@"App retry transfer BLOBChunk to nodes three times but still failed");
         [self createErrorWithString:@"App retry transfer BLOBChunk to nodes three times but still failed"];
