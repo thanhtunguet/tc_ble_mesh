@@ -201,6 +201,14 @@ typedef enum : UInt8 {
     AddDeviceModelStateScanned,
     AddDeviceModelStateConnecting,
     AddDeviceModelStateProvisioning,
+    
+    // state for fast provision
+    AddDeviceModelStateDeviceFound,
+    AddDeviceModelStateSetAddressRequest,
+    AddDeviceModelStateSetAddressResponse,
+    AddDeviceModelStateSettingProvisionData,
+    AddDeviceModelStateProvisionSuccess,
+    
 } AddDeviceModelState;//添加的设备的状态
 
 /// Table 5.18: Algorithms field values.
@@ -2139,6 +2147,7 @@ typedef enum : UInt8 {
     CHIP_TYPE_8278 = 1,
     CHIP_TYPE_8269 = 2,
     CHIP_TYPE_9518 = 3,
+    CHIP_TYPE_3218 = 4,
 } CHIP_TYPE;
 typedef enum : UInt8 {
     MajorProductType_light     = 0,

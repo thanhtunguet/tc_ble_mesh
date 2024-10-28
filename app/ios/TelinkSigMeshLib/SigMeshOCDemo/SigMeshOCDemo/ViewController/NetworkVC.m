@@ -30,8 +30,10 @@
 #import "MeshInfoVC.h"
 #import "ProxyFilterVC.h"
 #import "ActivityIndicatorCell.h"
+#import "NodeBatchSettingVC.h"
 
 #define kMeshInfo   @"Mesh Info"
+#define kNodeBatchSetting   @"Node Batch Setting"
 #define kSolicitationPDU   @"Solicitation PDU"
 
 @interface NetworkVC ()<UITableViewDataSource,UITableViewDelegate>
@@ -51,6 +53,7 @@
         //Solicitation PDU
         ActivityIndicatorCell *cell = (ActivityIndicatorCell *)[tableView dequeueReusableCellWithIdentifier:NSStringFromClass(ActivityIndicatorCell.class) forIndexPath:indexPath];
         cell.nameLabel.text = title;
+        cell.nameLabel.font = [UIFont boldSystemFontOfSize:15.0];
         cell.iconImageView.image = [UIImage imageNamed:self.iconSource[indexPath.row]];
         NSComparisonResult result = [[NSDate date] compare:self.endDate];
         if (result == NSOrderedAscending) {
@@ -59,17 +62,22 @@
             [cell.broadcastActivityView stopAnimating];
         }
         return cell;
-    } else if ([title isEqualToString:kMeshInfo]) {
+    } else if ([title isEqualToString:kMeshInfo] || [title isEqualToString:kNodeBatchSetting]) {
         SettingDetailItemCell *cell = (SettingDetailItemCell *)[tableView dequeueReusableCellWithIdentifier:CellIdentifiers_SettingDetailItemCellID forIndexPath:indexPath];
         cell.accessoryType = UITableViewCellAccessoryNone;
         cell.nameLabel.text = self.source[indexPath.row];
-        cell.detailLabel.text = SigDataSource.share.meshName;
+        if ([title isEqualToString:kMeshInfo]) {
+            cell.detailLabel.text = SigDataSource.share.meshName;
+        } else {
+            cell.detailLabel.text = @"Change name, Kick out";
+        }
         cell.iconImageView.image = [UIImage imageNamed:self.iconSource[indexPath.row]];
         return cell;
     }
     SettingTitleItemCell *cell = (SettingTitleItemCell *)[tableView dequeueReusableCellWithIdentifier:NSStringFromClass(SettingTitleItemCell.class) forIndexPath:indexPath];
     cell.accessoryType = UITableViewCellAccessoryNone;
     cell.nameLabel.text = self.source[indexPath.row];
+    cell.nameLabel.font = [UIFont boldSystemFontOfSize:15.0];
     cell.iconImageView.image = [UIImage imageNamed:self.iconSource[indexPath.row]];
     return cell;
 }
@@ -126,6 +134,9 @@
     [self.source addObject:kMeshInfo];
     [self.iconSource addObject:@"ic_network"];
     [self.vcIdentifiers addObject:ViewControllerIdentifiers_MeshInfoViewControllerID];
+    [self.source addObject:kNodeBatchSetting];
+    [self.iconSource addObject:@"ic_node_batch_setting"];
+    [self.vcIdentifiers addObject:NSStringFromClass(NodeBatchSettingVC.class)];
     [self.source addObject:@"Scenes"];
     [self.iconSource addObject:@"ic_scene"];
     [self.vcIdentifiers addObject:ViewControllerIdentifiers_SceneListViewControllerID];

@@ -25,6 +25,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+#define BaseUrl @"http://47.115.164.97:8080/"
+
 typedef void (^MyBlock) (id _Nullable result, NSError * _Nullable err);
 
 @interface TelinkHttpManager : NSObject

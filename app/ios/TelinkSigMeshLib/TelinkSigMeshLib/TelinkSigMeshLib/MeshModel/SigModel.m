@@ -3540,7 +3540,7 @@
 }
 
 - (UInt8)getElementCount{
-    UInt8 tem = 2;
+    UInt8 tem = 1;
     if (self.elements && self.elements.count != 0) {
         tem = (UInt8)self.elements.count;
     }

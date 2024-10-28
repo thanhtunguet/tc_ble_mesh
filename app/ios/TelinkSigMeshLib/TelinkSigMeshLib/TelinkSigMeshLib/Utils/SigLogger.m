@@ -119,13 +119,14 @@
     [handle closeFile];
         
     //清除无效的0000
-    UInt8 zero[20] = {0};
-    NSData *zeroData = [NSData dataWithBytes:zero length:20];
+    UInt8 zero[64] = {0};
+    NSData *zeroData = [NSData dataWithBytes:zero length:64];
     NSMutableData *mData = [NSMutableData dataWithData:data];
     while (YES) {
-        NSRange range = [mData rangeOfData:zeroData options:NSDataSearchBackwards range:NSMakeRange(0, mData.length)];
-        if (range.location != NSNotFound) {
-            [mData replaceBytesInRange:range withBytes:nil length:0];
+        NSRange range1 = [mData rangeOfData:zeroData options:0 range:NSMakeRange(0, mData.length)];
+        NSRange range2 = [mData rangeOfData:zeroData options:1 range:NSMakeRange(0, mData.length)];
+        if (range1.location != NSNotFound && range2.location != NSNotFound) {
+            [mData replaceBytesInRange:NSMakeRange(range1.location, range2.location+range2.length-range1.location) withBytes:nil length:0];
         } else {
             break;
         }

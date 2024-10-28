@@ -1,10 +1,10 @@
 /********************************************************************************************************
- * @file     SelectDeviceCell.m
+ * @file     NodeBatchCell.m
  *
  * @brief    A concise description.
  *
  * @author   Telink, 梁家誌
- * @date     2024/1/3
+ * @date     2024/9/24
  *
  * @par     Copyright (c) 2024, Telink Semiconductor (Shanghai) Co., Ltd. ("TELINK")
  *
@@ -21,35 +21,20 @@
  *          limitations under the License.
  *******************************************************************************************************/
 
-#import "SelectDeviceCell.h"
+#import "NodeBatchCell.h"
 
-@implementation SelectDeviceCell
+@implementation NodeBatchCell
 
 - (void)awakeFromNib {
     [super awakeFromNib];
     // Initialization code
-    self.selectButton.userInteractionEnabled = NO;
-    [self configurationCornerWithBgView:_bgView];
+    [self configurationCornerWithBgView:self.bgView];
 }
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
     [super setSelected:selected animated:animated];
 
     // Configure the view for the selected state
-}
-
-- (void)setModel:(SigNodeModel *)model {
-    _model = model;
-    self.iconImage.image = [DemoTool getNodeStateImageWithUnicastAddress:model.address];
-    self.nameLabel.text = [NSString stringWithFormat:@"Name:%@\nAdr-0x%04X\ncid-%@ pid-%@", model.name, model.address, model.cid, model.pid];
-    self.notSupportLabel.hidden = model.hasFirmwareUpdateServerModel;
-    if (model.isLPN) {
-        [self.selectButton setImage:[UIImage imageNamed:@"unxuan"] forState:UIControlStateNormal];
-        self.selectButton.enabled = YES;
-    } else {
-        [self.selectButton setImage:[UIImage imageNamed:model.state == DeviceStateOutOfLine ? @"bukexuan" : @"unxuan"] forState:UIControlStateNormal];
-        self.selectButton.enabled = model.state != DeviceStateOutOfLine;
-    }
 }
 
 @end

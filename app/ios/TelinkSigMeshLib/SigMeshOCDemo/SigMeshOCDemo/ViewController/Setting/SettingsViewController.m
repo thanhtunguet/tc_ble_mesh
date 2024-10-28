@@ -227,6 +227,8 @@
         [[NSUserDefaults standardUserDefaults] setValue:[NSNumber numberWithInteger:ProvisionMode_normalSelectable] forKey:kProvisionMode];
         [[NSUserDefaults standardUserDefaults] setValue:[NSNumber numberWithInt:SigTelinkExtendBearerMode_noExtend] forKey:kExtendBearerMode];
         [[NSUserDefaults standardUserDefaults] setValue:[NSNumber numberWithBool:YES] forKey:kAddStaticOOBDeviceByNoOOBEnable];
+        TelinkHttpManager.share.baseUrl = BaseUrl;
+        [[NSUserDefaults standardUserDefaults] setValue:TelinkHttpManager.share.baseUrl forKey:kDefaultBaseURL];
         [[NSUserDefaults standardUserDefaults] synchronize];
         [weakSelf refreshSourceAndUI];
         [weakSelf showTips:@"Reset all settings success!"];
@@ -247,6 +249,9 @@
         if (baseURL == nil || baseURL.length == 0) {
             [weakSelf.navigationController.view makeToast:@"New Base URL can not be empty!"];
             return;
+        }
+        if (![[baseURL substringFromIndex:baseURL.length-1] isEqualToString:@"/"]) {
+            baseURL = [baseURL stringByAppendingString:@"/"];
         }
         TelinkHttpManager.share.baseUrl = baseURL;
         [[NSUserDefaults standardUserDefaults] setValue:baseURL forKey:kDefaultBaseURL];

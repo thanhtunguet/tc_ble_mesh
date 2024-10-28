@@ -189,6 +189,12 @@
 		91343AF12B590B04008FC4F6 /* SensorConfigCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 91343AEE2B590B04008FC4F6 /* SensorConfigCell.m */; };
 		91343AF22B590B04008FC4F6 /* SensorConfigCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 91343AEF2B590B04008FC4F6 /* SensorConfigCell.xib */; };
 		91343AF32B590B04008FC4F6 /* SensorConfigCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 91343AEF2B590B04008FC4F6 /* SensorConfigCell.xib */; };
+		9136617C2CA2B5BA00DF6124 /* NodeBatchSettingVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 9136617B2CA2B5BA00DF6124 /* NodeBatchSettingVC.m */; };
+		9136617D2CA2B5BA00DF6124 /* NodeBatchSettingVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 9136617B2CA2B5BA00DF6124 /* NodeBatchSettingVC.m */; };
+		913661852CA2BB4200DF6124 /* NodeBatchCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 913661832CA2BB4200DF6124 /* NodeBatchCell.m */; };
+		913661862CA2BB4200DF6124 /* NodeBatchCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 913661842CA2BB4200DF6124 /* NodeBatchCell.xib */; };
+		913661872CA2BB4200DF6124 /* NodeBatchCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 913661842CA2BB4200DF6124 /* NodeBatchCell.xib */; };
+		913661882CA2BB4200DF6124 /* NodeBatchCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 913661832CA2BB4200DF6124 /* NodeBatchCell.m */; };
 		91423DE62B30384900BE9CE1 /* CMDCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 91423DE42B30384900BE9CE1 /* CMDCell.m */; };
 		91423DE72B30384900BE9CE1 /* CMDCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 91423DE42B30384900BE9CE1 /* CMDCell.m */; };
 		91423DE82B30384900BE9CE1 /* CMDCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 91423DE52B30384900BE9CE1 /* CMDCell.xib */; };
@@ -813,6 +819,11 @@
 		91343AED2B590B04008FC4F6 /* SensorConfigCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SensorConfigCell.h; sourceTree = "<group>"; };
 		91343AEE2B590B04008FC4F6 /* SensorConfigCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SensorConfigCell.m; sourceTree = "<group>"; };
 		91343AEF2B590B04008FC4F6 /* SensorConfigCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SensorConfigCell.xib; sourceTree = "<group>"; };
+		9136617A2CA2B5BA00DF6124 /* NodeBatchSettingVC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NodeBatchSettingVC.h; sourceTree = "<group>"; };
+		9136617B2CA2B5BA00DF6124 /* NodeBatchSettingVC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NodeBatchSettingVC.m; sourceTree = "<group>"; };
+		913661822CA2BB4200DF6124 /* NodeBatchCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NodeBatchCell.h; sourceTree = "<group>"; };
+		913661832CA2BB4200DF6124 /* NodeBatchCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NodeBatchCell.m; sourceTree = "<group>"; };
+		913661842CA2BB4200DF6124 /* NodeBatchCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NodeBatchCell.xib; sourceTree = "<group>"; };
 		91423DE32B30384900BE9CE1 /* CMDCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMDCell.h; sourceTree = "<group>"; };
 		91423DE42B30384900BE9CE1 /* CMDCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMDCell.m; sourceTree = "<group>"; };
 		91423DE52B30384900BE9CE1 /* CMDCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CMDCell.xib; sourceTree = "<group>"; };
@@ -1325,6 +1336,9 @@
 				91423DE52B30384900BE9CE1 /* CMDCell.xib */,
 				25589A722721403E00F4F880 /* CustomAlert */,
 				25589AAA2721403E00F4F880 /* ColorPicker */,
+				913661822CA2BB4200DF6124 /* NodeBatchCell.h */,
+				913661832CA2BB4200DF6124 /* NodeBatchCell.m */,
+				913661842CA2BB4200DF6124 /* NodeBatchCell.xib */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -1684,6 +1698,8 @@
 			children = (
 				25589B102721403E00F4F880 /* MeshInfoVC.h */,
 				25589B2F2721403E00F4F880 /* MeshInfoVC.m */,
+				9136617A2CA2B5BA00DF6124 /* NodeBatchSettingVC.h */,
+				9136617B2CA2B5BA00DF6124 /* NodeBatchSettingVC.m */,
 				91D769C12AEB895500A07E45 /* PrivateBeacon */,
 				917BE4B02AD66EFC0073FC35 /* Scenes */,
 				2541A38027E07D2B00CEA402 /* DirectForwarding */,
@@ -2056,6 +2072,7 @@
 				917BE4B52AD684F30073FC35 /* NetworkCell.xib in Resources */,
 				911217D82B4643A600A79A3E /* BinFileChooseVC.xib in Resources */,
 				25589BEF2721403F00F4F880 /* DeviceNetKeyListVC.xib in Resources */,
+				913661862CA2BB4200DF6124 /* NodeBatchCell.xib in Resources */,
 				25589BB32721403F00F4F880 /* ChooseItemCell.xib in Resources */,
 				91DC47F82B450708009B07DA /* SelectUpdateDeviceVC.xib in Resources */,
 				916FEF2D29E654F800206FE6 /* ProxyFilterCell.xib in Resources */,
@@ -2194,6 +2211,7 @@
 				91BF47DC2B27FFA300254CB6 /* CustomAlert.xib in Resources */,
 				91BF47DD2B27FFA300254CB6 /* SchedulerCell.xib in Resources */,
 				91BF47DE2B27FFA300254CB6 /* ProxyFilterVC.xib in Resources */,
+				913661872CA2BB4200DF6124 /* NodeBatchCell.xib in Resources */,
 				91BF47DF2B27FFA300254CB6 /* SceneItemCell.xib in Resources */,
 				914D045D2B2B012600824A17 /* DeviceStateItemView.xib in Resources */,
 				91DC480B2B453E83009B07DA /* MeshOTACell.xib in Resources */,
@@ -2418,6 +2436,7 @@
 				2512BB4627E4284F000B353B /* AddForwardingTableVC.m in Sources */,
 				25589C2C2721403F00F4F880 /* SchedulerListViewController.m in Sources */,
 				25589BFD2721403F00F4F880 /* DeviceSubscriptionListViewController.m in Sources */,
+				9136617C2CA2B5BA00DF6124 /* NodeBatchSettingVC.m in Sources */,
 				25589BB42721403F00F4F880 /* CustomAlertView.m in Sources */,
 				915958CA2AD5391F00D85CA4 /* SettingTitleItemCell.m in Sources */,
 				25589BF42721403F00F4F880 /* DeviceSettingViewController.m in Sources */,
@@ -2427,6 +2446,7 @@
 				917BE4C22AD689B10073FC35 /* ShareItemCell.m in Sources */,
 				91423DE62B30384900BE9CE1 /* CMDCell.m in Sources */,
 				914890102BB153780082ABA7 /* SceneElementView.m in Sources */,
+				913661852CA2BB4200DF6124 /* NodeBatchCell.m in Sources */,
 				25589BAB2721403F00F4F880 /* zipAndUnzip+zipString.m in Sources */,
 				917BE4B42AD684F30073FC35 /* NetworkCell.m in Sources */,
 				25589BDB2721403F00F4F880 /* ChooseBinCell.m in Sources */,
@@ -2589,6 +2609,7 @@
 				919BC7692B29954A0011991B /* JoinedNetworkCell.m in Sources */,
 				91BF470F2B27FFA300254CB6 /* DeviceNetKeyListVC.m in Sources */,
 				91BF47102B27FFA300254CB6 /* ExtendBearerModeCell.m in Sources */,
+				913661882CA2BB4200DF6124 /* NodeBatchCell.m in Sources */,
 				91BF47112B27FFA300254CB6 /* ResponseTestVC.m in Sources */,
 				91BF47122B27FFA300254CB6 /* ReKeyBindViewController.m in Sources */,
 				91BF47142B27FFA300254CB6 /* ChooseModelIDCell.m in Sources */,
@@ -2716,6 +2737,7 @@
 				91BF478F2B27FFA300254CB6 /* UIViewController+Message.m in Sources */,
 				91BF47902B27FFA300254CB6 /* AutoAddDeviceVC.m in Sources */,
 				91BF47912B27FFA300254CB6 /* DeviceChooseKeyVC.m in Sources */,
+				9136617D2CA2B5BA00DF6124 /* NodeBatchSettingVC.m in Sources */,
 				91BF47922B27FFA300254CB6 /* ProxyFilterVC.m in Sources */,
 				91423DE72B30384900BE9CE1 /* CMDCell.m in Sources */,
 				91BF47942B27FFA300254CB6 /* RemoteElementCell.m in Sources */,
@@ -2904,7 +2926,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = J3AJAYU5N6;
 				ENABLE_BITCODE = NO;
 				GCC_C_LANGUAGE_STANDARD = "compiler-default";
@@ -2927,7 +2949,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -2950,7 +2972,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = J3AJAYU5N6;
 				ENABLE_BITCODE = NO;
 				GCC_C_LANGUAGE_STANDARD = "compiler-default";
@@ -2973,7 +2995,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -3110,7 +3132,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -3155,7 +3177,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -3201,7 +3223,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -3247,7 +3269,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
