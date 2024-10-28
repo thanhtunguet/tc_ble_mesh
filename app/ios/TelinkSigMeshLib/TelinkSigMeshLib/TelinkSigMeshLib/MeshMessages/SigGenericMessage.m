@@ -17360,10 +17360,6 @@ SigGenericDeltaSet|SigGenericDeltaSetUnacknowledged|SigGenericLevelSet|SigGeneri
 - (instancetype)initWithParameters:(NSData *)parameters {
     /// Use the init method of the parent class to initialize some properties of the parent class of the subclass instance.
     if (self = [super init]) {
-        //=========test
-        _status = 0;
-        return self;
-        //=========test
         /// Initialize self.
         self.opCode = VendorOpCode_response;
         if (parameters == nil || parameters.length != 2) {
@@ -17581,7 +17577,7 @@ SigGenericDeltaSet|SigGenericDeltaSetUnacknowledged|SigGenericLevelSet|SigGeneri
     /// Use the init method of the parent class to initialize some properties of the parent class of the subclass instance.
     if (self = [super init]) {
         /// Initialize self.
-        self.commandLength = 9;
+        self.commandLength = 9+1;
         self.commandType = enOceanKeyStruct.KeyPairEnable == 3 ? EnOceanPublishSetType_onOffFourButtons : EnOceanPublishSetType_onOffTwoButtons;
         self.unicastAddressOfEnOcean = unicastAddressOfEnOcean;
         _enOceanKeyStruct = enOceanKeyStruct;
@@ -17603,7 +17599,7 @@ SigGenericDeltaSet|SigGenericDeltaSetUnacknowledged|SigGenericLevelSet|SigGeneri
     /// Use the init method of the parent class to initialize some properties of the parent class of the subclass instance.
     if (self = [super init]) {
         /// Initialize self.
-        self.commandLength = 12;
+        self.commandLength = 12+1;
         self.commandType = enOceanKeyStruct.KeyPairEnable == 3 ? EnOceanPublishSetType_DeltaLightnessFourButtons : EnOceanPublishSetType_DeltaLightnessTwoButtons;
         self.unicastAddressOfEnOcean = unicastAddressOfEnOcean;
         _enOceanKeyStruct = enOceanKeyStruct;
@@ -17637,6 +17633,9 @@ SigGenericDeltaSet|SigGenericDeltaSetUnacknowledged|SigGenericLevelSet|SigGeneri
         SInt32 tem32 = _deltaValue;
         [mData appendBytes:&tem32 length:4];
     }
+    // tid=0
+    tem8 = 0;
+    [mData appendBytes:&tem8 length:1];
     if (self.transitionTime != nil) {
         tem8 = self.transitionTime.intValue;
         [mData appendBytes:&tem8 length:1];

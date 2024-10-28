@@ -183,11 +183,7 @@ typedef void(^ResultHandler)(NSError *error);
             //pair添加新设备
             if (selectOnlineAddressArray.count == onlineAddressArray.count && registerAddressArray.count != oldRegisterAddressArray.count) {
                 //pair 所有
-                if (commandList.count > 0) {
-                    weakSelf.publishAddresses = [NSMutableArray arrayWithArray:selectOnlineAddressArray];
-                } else {
-                    weakSelf.registerPairAddresses = [NSMutableArray arrayWithArray:selectOnlineAddressArray];
-                }
+                weakSelf.registerPairAddresses = [NSMutableArray arrayWithArray:selectOnlineAddressArray];
                 dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
                 [weakSelf sendRegisterPairWithDestinationAddress:0xFFFF timeout:5.0 resultHandler:^(NSError *error) {
                     if (error) {
@@ -299,12 +295,9 @@ typedef void(^ResultHandler)(NSError *error);
     //pair
     __weak typeof(self) weakSelf = self;
     [SDKLibCommand sendSigEnOceanPairMacAddressAndKeyRequestMessageWithDestinationAddress:destinationAddress unicastAddressOfEnOcean:self.nodeModel.address macAddressDataOfEnOcean:[LibTools turnOverData:[LibTools nsstringToHex:self.oldEnOceanInfo.staticSourceAddress]] keyOfEnOcean:[LibTools nsstringToHex:self.oldEnOceanInfo.securityKey] successCallback:^(UInt16 source, UInt16 destination, SigMeshMessage * _Nonnull responseMessage) {
-        if (weakSelf.isRegisterPairing) {
+        if (weakSelf.isRegisterPairing && [weakSelf.registerPairAddresses containsObject:@(source)]) {
             SigEnOceanResponseMessage *message = [[SigEnOceanResponseMessage alloc] initWithParameters:responseMessage.parameters];
             if (message && message.vendorSubOpCode == VendorSubOpCode_pairMacAddressAndKey) {
-                //=========test
-//            if (message) {
-              //=========test
                 if (message.status == EnOceanPairStatus_success) {
                     // cache response address
                     if ([weakSelf.registerPairAddresses containsObject:@(source)] && ![weakSelf.responseAddresses containsObject:@(source)]) {
@@ -324,7 +317,7 @@ typedef void(^ResultHandler)(NSError *error);
                 } else {
                     NSError *error = [NSError errorWithDomain:[NSString stringWithFormat:@"PairMacAddressAndKey fail, error code=%d", message.status] code:-1 userInfo:nil];
                     dispatch_async(dispatch_get_main_queue(), ^{
-                        [NSObject cancelPreviousPerformRequestsWithTarget:weakSelf selector:@selector(pairDeleteTimeOutAction) object:nil];
+                        [NSObject cancelPreviousPerformRequestsWithTarget:weakSelf selector:@selector(registerPairTimeOutAction) object:nil];
                     });
                     weakSelf.isDeletePairing = NO;
                     if (resultHandler) {
@@ -365,12 +358,9 @@ typedef void(^ResultHandler)(NSError *error);
         for (SigEnOceanPublishSetBaseRequestMessage *command in publishCommandDataList) {
             dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
             [SDKLibCommand sendEnOceanPublishSetRequestMessageWithDestinationAddress:destinationAddress payloadData:command.parameters successCallback:^(UInt16 source, UInt16 destination, SigMeshMessage * _Nonnull responseMessage) {
-                if (weakSelf.isSettingPublish) {
+                if (weakSelf.isSettingPublish && [weakSelf.publishAddresses containsObject:@(source)]) {
                     SigEnOceanResponseMessage *message = [[SigEnOceanResponseMessage alloc] initWithParameters:responseMessage.parameters];
                     if (message && message.vendorSubOpCode == VendorSubOpCode_publishSet) {
-                        //=========test
-//                        if (message) {
-                        //=========test
                         if (message.status == EnOceanPairStatus_success) {
                             // cache response address
                             if ([weakSelf.publishAddresses containsObject:@(source)] && ![weakSelf.responseAddresses containsObject:@(source)]) {
@@ -384,7 +374,7 @@ typedef void(^ResultHandler)(NSError *error);
                         } else {
                             NSError *error = [NSError errorWithDomain:[NSString stringWithFormat:@"PublishSet fail, error code=%d", message.status] code:-1 userInfo:nil];
                             dispatch_async(dispatch_get_main_queue(), ^{
-                                [NSObject cancelPreviousPerformRequestsWithTarget:weakSelf selector:@selector(pairDeleteTimeOutAction) object:nil];
+                                [NSObject cancelPreviousPerformRequestsWithTarget:weakSelf selector:@selector(sendPublishSetCommandTimeOutAction) object:nil];
                             });
                             weakSelf.isDeletePairing = NO;
                             if (resultHandler) {
@@ -437,12 +427,9 @@ typedef void(^ResultHandler)(NSError *error);
     //pair delete
     __weak typeof(self) weakSelf = self;
     [SDKLibCommand sendSigEnOceanPairDeleteRequestMessageWithDestinationAddress:address unicastAddressOfEnOcean:self.nodeModel.address successCallback:^(UInt16 source, UInt16 destination, SigMeshMessage * _Nonnull responseMessage) {
-        if (weakSelf.isDeletePairing) {
+        if (weakSelf.isDeletePairing && [weakSelf.deletePairAddresses containsObject:@(source)]) {
             SigEnOceanResponseMessage *message = [[SigEnOceanResponseMessage alloc] initWithParameters:responseMessage.parameters];
-            if (message && message.vendorSubOpCode == VendorSubOpCode_pairMacAddressAndKey) {
-                //=========test
-//                if (message) {
-                //=========test
+            if (message && message.vendorSubOpCode == VendorSubOpCode_pairDelete) {
                 if (message.status == EnOceanPairStatus_success) {
                     // cache response address
                     if ([weakSelf.deletePairAddresses containsObject:@(source)] && ![weakSelf.responseAddresses containsObject:@(source)]) {
