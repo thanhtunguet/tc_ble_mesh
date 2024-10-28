@@ -32,6 +32,7 @@
 #import "RemoteAddVC.h"
 #import "AddDeviceByCloudVC.h"
 #import "CMDViewController.h"
+#import "PassiveSwitchDetailVC.h"
 
 @interface HomeViewController()<UICollectionViewDelegate,UICollectionViewDataSource,SigBearerDataDelegate,SigDataSourceDelegate,SigMessageDelegate,SigBluetoothDelegate>
 @property (strong, nonatomic) NSMutableArray <SigNodeModel *>*source;
@@ -309,7 +310,7 @@
 -(void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath{
     SigNodeModel *model = self.source[indexPath.item];
 
-    if (model.isSensor || model.isLPN || model.isRemote) {
+    if (model.isSensor || model.isLPN || model.isRemote || model.isEnOceanDevice) {
         return;
     }
 
@@ -533,10 +534,10 @@
 }
 
 - (void)bearerDidOpen:(SigBearer *)bearer {
-    //非主页，重连mesh成功，是否需要获取设备的状态（v3.3.3.5版本发现meshOTA界面是需要获取状态的）(v3.3.3.6版本发现弹UIAlertController框提示@"cancel Mesh ota finish!"没有点击确定的情况下不会获取设备状态，此次再次修改)
+    //非主页，重连mesh成功，是否需要获取设备的状态（v3.3.3.5版本发现meshOTA界面是需要获取状态的）(v3.3.3.6版本发现弹UIAlertController框提示@"cancel Mesh ota finish!"没有点击确定的情况下不会获取设备状态，此处再次修改)（v4.1.0.1版本发现SingleDeviceViewController界面是需要获取状态的）
     dispatch_async(dispatch_get_main_queue(), ^{
         UIViewController *vc = self.currentViewController;
-        if ([vc isMemberOfClass:[self class]] || [vc isMemberOfClass:[MeshOTAVC class]] || [vc isMemberOfClass:[UIAlertController class]]) {
+        if ([vc isMemberOfClass:[self class]] || [vc isMemberOfClass:[MeshOTAVC class]] || [vc isMemberOfClass:[UIAlertController class]] || [vc isMemberOfClass:[SingleDeviceViewController class]]) {
             [self freshOnline:nil];
         } else {
             TelinkLogInfo(@"needn`t get status.%@",vc);
@@ -606,7 +607,18 @@
         NSIndexPath *indexPath = [self.collectionView indexPathForItemAtPoint:[sender locationInView:self.collectionView]];
         if (indexPath != nil) {
             SigNodeModel *model = self.source[indexPath.item];
-            if (model.isKeyBindSuccess) {
+            if (model.isEnOceanDevice) {
+                EnOceanInfo *info = [[EnOceanInfo alloc] init];
+                [info setDictionaryToEnOceanInfo:[model getDictionaryOfSigNodeModel]];
+                if (info) {
+                    PassiveSwitchDetailVC *tempCon = [[PassiveSwitchDetailVC alloc] initWithNibName:@"PassiveSwitchDetailVC" bundle:[NSBundle mainBundle]];
+                    tempCon.oldEnOceanInfo = info;
+                    tempCon.nodeModel = model;
+                    [self.navigationController pushViewController:tempCon animated:YES];
+                } else {
+                    [self showTips:@"No passive switch information!"];
+                }
+            } else if (model.isKeyBindSuccess) {
                 SingleDeviceViewController *vc = (SingleDeviceViewController *)[UIStoryboard initVC:ViewControllerIdentifiers_SingleDeviceViewControllerID storyboard:@"DeviceSetting"];
                 vc.model = model;
                 [self.navigationController pushViewController:vc animated:YES];

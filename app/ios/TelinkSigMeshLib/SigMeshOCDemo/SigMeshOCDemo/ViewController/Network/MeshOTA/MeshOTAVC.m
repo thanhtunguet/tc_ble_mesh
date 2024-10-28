@@ -143,11 +143,14 @@
 }
 
 - (void)refreshDistributorUI {
+    //进入MeshOTA，如果直连节点支持作为distributor，distributor默认选中直连节点；如果直连节点不支持作为distributor，distributor默认选中手机。
     SigNodeModel *node = SigDataSource.share.getCurrentConnectedNode;
     SigModelIDModel *modelId = [node getModelIDModelWithModelID:kSigModel_FirmwareDistributionServer_ID];
     if (modelId == nil) {
         [self.connectedDeviceButton setImage:[UIImage imageNamed:@"bukexuan"] forState:UIControlStateNormal];
         [self clickPhone:self.phoneButton];
+    } else {
+        [self clickConnectedDevice:self.connectedDeviceButton];
     }
 }
 
@@ -156,6 +159,7 @@
     self.navigationItem.hidesBackButton = NO;
     [self updateInitiatorProgress:1.0];
     MeshOTAManager.share.phoneIsDistributor = NO;
+    [self clickConnectedDevice:self.connectedDeviceButton];
     NSNumber *policyNumber = [[NSUserDefaults standardUserDefaults] valueForKey:kDistributorPolicy];
     MeshOTAManager.share.updatePolicy = policyNumber.intValue;
     NSNumber *addressNumber = [[NSUserDefaults standardUserDefaults] valueForKey:kDistributorAddress];
@@ -229,6 +233,7 @@
     MeshOTAManager.share.otaData = data;
 #endif
 
+    [self setReplenishPacketBlock];
     MeshOTAManager.share.needCheckVersionAfterApply = YES;
     [MeshOTAManager.share continueFirmwareUpdateWithDeviceAddresses:addresses advDistributionProgressHandle:^(SigFirmwareDistributionReceiversList *responseMessage) {
         [weakSelf showAdvDistributionProgressHandle:responseMessage];
@@ -238,6 +243,15 @@
         [weakSelf showerrorHandle:error];
     }];
     [self configReconnectUI];
+}
+
+- (void)setReplenishPacketBlock {
+    __weak typeof(self) weakSelf = self;
+    [MeshOTAManager.share setReplenishPacketCallback:^(NSInteger totalPacketCount, NSInteger currentPacketIndex, NSInteger allBlockCount, NSInteger currentBlockIndex, NSInteger chunksCountOfCurrentBlock, NSInteger currentChunkIndex, UInt16 destinationAddress) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [weakSelf.navigationController.view makeToast:[NSString stringWithFormat:@"Replenishing the packet···(%ld/%ld)\nallBlockCount:%ld\ncurrentBlockIndex:%ld\nchunksCountOfCurrentBlock:%ld\ncurrentChunkIndex:%ld\ndestinationAddress:0x%04X", totalPacketCount, currentPacketIndex, allBlockCount, currentBlockIndex, chunksCountOfCurrentBlock, currentChunkIndex, destinationAddress]];
+        });
+    }];
 }
 
 - (void)configReconnectUI {
@@ -433,7 +447,7 @@
     [self.allItemVIDDict removeAllObjects];
     //2.firmwareUpdateInformationGet，该消息在modelID：kSigModel_FirmwareUpdateServer_ID里面。
     UInt16 modelIdentifier = kSigModel_FirmwareUpdateServer_ID;
-    NSArray *curNodes = [NSArray arrayWithArray:SigDataSource.share.curNodes];
+    NSArray *curNodes = [NSArray arrayWithArray:self.selectItemArray];
     NSInteger responseMax = 0;
     NSMutableArray *LPNArray = [NSMutableArray array];
     for (SigNodeModel *model in curNodes) {
@@ -464,8 +478,8 @@
                         if (currentFirmwareID.length >= 4) memcpy(&vid, pu + 2, 2);
                         vid = CFSwapInt16HostToBig(vid);
                         TelinkLogDebug(@"firmwareUpdateInformationGet=%@,pid=%d,vid=%d",[LibTools convertDataToHexStr:currentFirmwareID],pid,vid);
-                        [weakSelf updateNodeModelVidWithAddress:source vid:vid];
                         weakSelf.allNodeFirmwareUpdateInformationStatusDict[@(source)] = responseMessage;
+                        [weakSelf updateNodeModelVidWithAddress:source vid:vid];
                     }
                 }
             } resultCallback:^(BOOL isResponseAll, NSError * _Nullable error) {
@@ -491,6 +505,7 @@
                             if (currentFirmwareID.length >= 4) memcpy(&vid, pu + 2, 2);
                             vid = CFSwapInt16HostToBig(vid);
                             TelinkLogDebug(@"firmwareUpdateInformationGet=%@,pid=%d,vid=%d",[LibTools convertDataToHexStr:currentFirmwareID],pid,vid);
+                            weakSelf.allNodeFirmwareUpdateInformationStatusDict[@(source)] = responseMessage;
                             [weakSelf updateNodeModelVidWithAddress:source vid:vid];
                         }
                     }
@@ -707,6 +722,7 @@
 #endif
     [[NSUserDefaults standardUserDefaults] synchronize];
 
+    [self setReplenishPacketBlock];
     [MeshOTAManager.share setFirmwareUpdateFirmwareMetadataCheckSuccessHandle:^(NSDictionary *dict) {
         [weakSelf.tableView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
     }];
