@@ -536,7 +536,7 @@
     }
 }
 
-- (IBAction)clickSelectDevicesButton:(UIButton *)sender {
+- (IBAction)clickSelectDeviceButton:(UIButton *)sender {
 #ifndef kIsTelinkCloudSigMeshLib
     DeviceSelectVC *vc = [[DeviceSelectVC alloc] init];
 #else
