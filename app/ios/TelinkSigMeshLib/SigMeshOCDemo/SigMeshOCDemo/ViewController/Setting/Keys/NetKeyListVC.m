@@ -124,14 +124,14 @@
                 return;
             }
             __weak typeof(self) weakSelf = self;
-            [self showAlertTitle:kDefaultAlertTitle message:[NSString stringWithFormat:@"Are you sure delete netKey, index:0x%04lX key:%@",(long)model.index,model.key] sure:^(UIAlertAction *action) {
+            [self showAlertSureAndCancelWithTitle:kDefaultAlertTitle message:[NSString stringWithFormat:@"Are you sure delete netKey, index:0x%04lX key:%@",(long)model.index,model.key] sure:^(UIAlertAction *action) {
                 [weakSelf.network.netKeys removeObject:model];
                 if (weakSelf.backNetwork) {
                     weakSelf.backNetwork(weakSelf.network);
                 }
                 [weakSelf.sourceArray removeObject:model];
                 [weakSelf.tableView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
-            }];
+            } cancel:nil];
         }
     }
 }

@@ -25,7 +25,6 @@
 #import "ShowTipsView.h"
 #import "NetworkListVC.h"
 #import "UIImage+Extension.h"
-#import "UIViewController+Message.h"
 #import "LoginVC.h"
 
 @implementation BaseViewController

@@ -448,12 +448,15 @@
     //2.firmwareUpdateInformationGet，该消息在modelID：kSigModel_FirmwareUpdateServer_ID里面。
     UInt16 modelIdentifier = kSigModel_FirmwareUpdateServer_ID;
     NSArray *curNodes = [NSArray arrayWithArray:self.selectItemArray];
-    NSInteger responseMax = 0;
     NSMutableArray *LPNArray = [NSMutableArray array];
+    //address of not LPN
+    NSMutableArray *nodeArray = [NSMutableArray array];
+    //response status of not LPN
+    NSMutableArray *responseArray = [NSMutableArray array];
     for (SigNodeModel *model in curNodes) {
         NSArray *addressArray = [model getAddressesWithModelID:@(modelIdentifier)];
         if (model.state != DeviceStateOutOfLine && addressArray && addressArray.count > 0 && model.features.lowPowerFeature == SigNodeFeaturesState_notSupported) {
-            responseMax ++;
+            [nodeArray addObject:@(model.address)];
         }
         if (model.features.lowPowerFeature != SigNodeFeaturesState_notSupported) {
             [LPNArray addObject:model];
@@ -462,10 +465,10 @@
     NSOperationQueue *operationQueue = [[NSOperationQueue alloc] init];
     [operationQueue addOperationWithBlock:^{
         //这个block语句块在子线程中执行
-        //如果responseMax = 0，则无需发送到0xFFFF获取版本号。
-        if (responseMax > 0 || (responseMax == 0 && LPNArray.count == 0)) {
+        //如果nodeArray.count = 0，则无需发送到0xFFFF获取版本号。
+        if (nodeArray.count > 0) {
             dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-            [SDKLibCommand firmwareUpdateInformationGetWithDestination:kMeshAddress_allNodes firstIndex:0 entriesLimit:1 retryCount:SigDataSource.share.defaultRetryCount responseMaxCount:responseMax successCallback:^(UInt16 source, UInt16 destination, SigFirmwareUpdateInformationStatus * _Nonnull responseMessage) {
+            [SDKLibCommand firmwareUpdateInformationGetWithDestination:kMeshAddress_allNodes firstIndex:0 entriesLimit:1 retryCount:SigDataSource.share.defaultRetryCount responseMaxCount:0 successCallback:^(UInt16 source, UInt16 destination, SigFirmwareUpdateInformationStatus * _Nonnull responseMessage) {
                 if (responseMessage.firmwareInformationListCount > 0) {
                     /*
                      responseMessage.firmwareInformationList.firstObject.currentFirmwareID.length = 4: 2 bytes pid(设备类型) + 2 bytes vid(版本id).
@@ -478,16 +481,21 @@
                         if (currentFirmwareID.length >= 4) memcpy(&vid, pu + 2, 2);
                         vid = CFSwapInt16HostToBig(vid);
                         TelinkLogDebug(@"firmwareUpdateInformationGet=%@,pid=%d,vid=%d",[LibTools convertDataToHexStr:currentFirmwareID],pid,vid);
-                        weakSelf.allNodeFirmwareUpdateInformationStatusDict[@(source)] = responseMessage;
-                        [weakSelf updateNodeModelVidWithAddress:source vid:vid];
+                        if ([nodeArray containsObject:@(source)] && ![responseArray containsObject:@(source)]) {
+                            [responseArray addObject:@(source)];
+                            weakSelf.allNodeFirmwareUpdateInformationStatusDict[@(source)] = responseMessage;
+                            [weakSelf updateNodeModelVidWithAddress:source vid:vid];
+                        }
+                        if (nodeArray.count == responseArray.count) {
+                            dispatch_semaphore_signal(semaphore);
+                        }
                     }
                 }
             } resultCallback:^(BOOL isResponseAll, NSError * _Nullable error) {
                 TelinkLogInfo(@"isResponseAll=%d,error=%@",isResponseAll,error);
-                dispatch_semaphore_signal(semaphore);
             }];
             //Most provide 4 seconds
-            dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 10.0));
+            dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 4.0));
         }
         if (LPNArray && LPNArray.count) {
             for (SigNodeModel *model in LPNArray) {
@@ -514,7 +522,7 @@
                     dispatch_semaphore_signal(semaphore);
                 }];
                 //Most provide 4 seconds
-                dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 10.0));
+                dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 4.0));
             }
         }
     }];
@@ -528,7 +536,7 @@
     }
 }
 
-- (IBAction)clickSelectDevicesButton:(UIButton *)sender {
+- (IBAction)clickSelectDeviceButton:(UIButton *)sender {
 #ifndef kIsTelinkCloudSigMeshLib
     DeviceSelectVC *vc = [[DeviceSelectVC alloc] init];
 #else

@@ -29,8 +29,6 @@
 #define RequestTypePOST     @"POST"
 #define RequestTypeDelete   @"DELETE"
 
-#define BaseUrl @"http://47.115.164.97:8080/"
-
 #define CustomErrorDomain @"cn.telink.httpRequest"
 
 @class TelinkHttpRequest;

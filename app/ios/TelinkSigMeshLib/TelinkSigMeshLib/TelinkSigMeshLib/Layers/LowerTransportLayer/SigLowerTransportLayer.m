@@ -681,12 +681,11 @@
             }
             ackExpected = [SigHelper.share isUnicastAddress:segment.destination];
             [_networkManager.networkLayer sendLowerTransportPdu:segment ofType:SigPduType_networkPdu withTtl:ttl ivIndex:segment.ivIndex];
-            //==========test==========//
-            //因为非直连设备地址的segment包需要在mesh网络内部进行转发，且设备不一定存在ack返回。（BLOBChunkTransfer目标地址为组播地址时）
-            if (segment.destination != SigMeshLib.share.dataSource.getCurrentConnectedNode.address) {
+            //1.因为非直连设备地址的segment包需要proxy节点转发到mesh网络转发时间为maxNetworkTransmitInterval，且设备不一定存在ack返回(BLOBChunkTransfer目标地址为组播地址时)，所以添加延时maxNetworkTransmitInterval。
+            //2.发送到手机本地地址的PDU不需要延时。发送到直连节点即proxy节点也不需要延时。
+            if (segment.destination != SigMeshLib.share.dataSource.getCurrentConnectedNode.address && segment.destination != SigMeshLib.share.dataSource.curLocationNodeModel.address) {
                 [NSThread sleepForTimeInterval:SigMeshLib.share.maxNetworkTransmitInterval];
             }
-            //==========test==========//
         }
     }
 //    TelinkLogVerbose(@"==========发送seg count=%d结束",count);

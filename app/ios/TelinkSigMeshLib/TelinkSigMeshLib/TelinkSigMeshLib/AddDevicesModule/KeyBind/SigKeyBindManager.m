@@ -445,7 +445,10 @@
             //后台发送25字节长度的ACK，需要一定的时间。
             NSInteger mtu = [SigBearer.share.getCurrentPeripheral maximumWriteValueLengthForType:CBCharacteristicWriteWithoutResponse];
             if (mtu < 25) {
-                [weakSelf performSelector:@selector(sendSensorGetAfterTimePublication) withObject:nil afterDelay:0.1];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [NSObject cancelPreviousPerformRequestsWithTarget:weakSelf selector:@selector(sendSensorGetAfterTimePublication) object:nil];
+                    [weakSelf performSelector:@selector(sendSensorGetAfterTimePublication) withObject:nil afterDelay:0.1];
+                });
             } else {
                 [weakSelf sendSensorGetAfterTimePublication];
             }
@@ -459,10 +462,10 @@
 
 - (void)keyBindFailActionWithErrorString:(NSString *)errorString {
     if (self.isKeybinding) {
+        self.isKeybinding = NO;
         [self showKeyBindEnd];
         TelinkLogInfo(@"%@",errorString);
         [self.messageHandle cancel];
-        self.isKeybinding = NO;
         if (self.failBlock) {
             NSError *error = [NSError errorWithDomain:errorString code:-1 userInfo:nil];
             self.failBlock(error);
@@ -503,7 +506,10 @@
                         //后台发送25字节长度的ACK，需要一定的时间。
                         NSInteger mtu = [SigBearer.share.getCurrentPeripheral maximumWriteValueLengthForType:CBCharacteristicWriteWithoutResponse];
                         if (mtu < 25) {
-                            [weakSelf performSelector:@selector(sendSensorGetAfterTimePublication) withObject:nil afterDelay:0.1];
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                [NSObject cancelPreviousPerformRequestsWithTarget:weakSelf selector:@selector(sendSensorGetAfterTimePublication) object:nil];
+                                [weakSelf performSelector:@selector(sendSensorGetAfterTimePublication) withObject:nil afterDelay:0.1];
+                            });
                         } else {
                             [weakSelf sendSensorGetAfterTimePublication];
                         }

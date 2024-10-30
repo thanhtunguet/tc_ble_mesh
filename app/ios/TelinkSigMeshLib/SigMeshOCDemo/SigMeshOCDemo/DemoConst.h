@@ -119,8 +119,8 @@ typedef enum : UInt8 {
 //Tip
 #define Tip_CommandBusy @"Sending command busy···"
 #define Tip_DeviceOutline   @"device is outline"
-#define Tip_DisconnectOrConnectFail @"diconnect or connect fail"
-#define Tip_KickOutDevice   @"kick out ..."
+#define Tip_DisconnectOrConnectFail @"disconnect or connect fail"
+#define Tip_KickOutDevice   @"kick out processing..."
 #define Tip_ReKeyBindDevice @"reKeyBind ..."
 #define Tip_ReKeyBindDeviceSuccess  @"reKeyBind success ..."
 #define Tip_ReKeyBindDeviceFail @"KeyBind fail, retry?"
