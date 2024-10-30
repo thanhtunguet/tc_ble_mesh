@@ -51,6 +51,7 @@ import com.telink.ble.mesh.core.access.fu.DistributorType;
 import com.telink.ble.mesh.core.access.fu.FUCallback;
 import com.telink.ble.mesh.core.access.fu.FUState;
 import com.telink.ble.mesh.core.access.fu.UpdatePolicy;
+import com.telink.ble.mesh.core.message.MeshSigModel;
 import com.telink.ble.mesh.core.message.NotificationMessage;
 import com.telink.ble.mesh.core.message.config.NetworkTransmitGetMessage;
 import com.telink.ble.mesh.core.message.firmwareupdate.AdditionalInformation;
@@ -445,6 +446,7 @@ public class FUActivity extends BaseActivity implements View.OnClickListener,
         ll_policy = findViewById(R.id.ll_policy);
         rg_dist = findViewById(R.id.rg_dist);
         rb_device = findViewById(R.id.rb_device);
+        rb_device.setEnabled(isDistSpt());
         rb_phone = findViewById(R.id.rb_phone);
         rb_plc_ver_apl = findViewById(R.id.rb_plc_ver_apl);
         rb_plc_ver = findViewById(R.id.rb_plc_ver);
@@ -615,13 +617,24 @@ public class FUActivity extends BaseActivity implements View.OnClickListener,
         runOnUiThread(() -> {
             btn_start.setEnabled(enable);
             btn_get_version.setEnabled(enable);
-            rb_device.setEnabled(enable);
+            rb_device.setEnabled(enable && isDistSpt());
             rb_phone.setEnabled(enable);
             rb_plc_ver_apl.setEnabled(enable);
             rb_plc_ver.setEnabled(enable);
             tv_file_path.setEnabled(enable);
             tv_select_device.setEnabled(enable);
         });
+    }
+
+    /**
+     * check dose the direct connected device support distribution
+     *
+     * @return
+     */
+    private boolean isDistSpt() {
+        int adr = MeshService.getInstance().getDirectConnectedNodeAddress();
+        NodeInfo node = mesh.getDeviceByMeshAddress(adr);
+        return node != null && node.getTargetEleAdr(MeshSigModel.SIG_MD_FW_DISTRIBUT_S.modelId) != -1;
     }
 
     private void appendLog(String logInfo) {

@@ -413,7 +413,8 @@ public final class SwitchSettingActivity extends BaseActivity implements EventLi
 
 
     private boolean isOpposite(SwitchAction actionA, SwitchAction actionB) {
-        if (actionA.action != actionB.action) return false;
+        if (actionA.action != actionB.action || actionA.publishAddress != actionB.publishAddress)
+            return false;
         int action = actionA.action;
         if (action == SwitchUtils.SWITCH_ACTION_ON_OFF) {
             return actionA.value != actionB.value; // on and off
