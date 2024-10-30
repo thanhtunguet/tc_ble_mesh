@@ -2305,7 +2305,7 @@
                 //has next item
                 EnOceanButtonItemInfo *nextItem = info.buttonInfo.buttonConfigList[i+1];
                 if (!nextItem.isActionMerge) {
-                    if (item.type == nextItem.type && item.type != EnOceanButtonItemType_SceneRecall && ((item.type == EnOceanButtonItemType_OnOff && (item.value ^ nextItem.value)) || ((item.type == EnOceanButtonItemType_Light || EnOceanButtonItemType_CT) && (item.value == -nextItem.value)))) {
+                    if (item.publishAddress == nextItem.publishAddress && item.type == nextItem.type && item.type != EnOceanButtonItemType_SceneRecall && ((item.type == EnOceanButtonItemType_OnOff && (item.value ^ nextItem.value)) || ((item.type == EnOceanButtonItemType_Light || EnOceanButtonItemType_CT) && (item.value == -nextItem.value)))) {
                         SigEnOceanPublishSetBaseRequestMessage *command = [self getRequestCommandWithEnOceanButtonItemInfo:item enOceanInfo:info isActionMerge:YES];
                         [mArray addObject:command];
                         //判断0和1 或者 2和3两个指令是否可以2合一发送。

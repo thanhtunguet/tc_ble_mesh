@@ -319,7 +319,7 @@ typedef void(^ResultHandler)(NSError *error);
                     dispatch_async(dispatch_get_main_queue(), ^{
                         [NSObject cancelPreviousPerformRequestsWithTarget:weakSelf selector:@selector(registerPairTimeOutAction) object:nil];
                     });
-                    weakSelf.isDeletePairing = NO;
+                    weakSelf.isRegisterPairing = NO;
                     if (resultHandler) {
                         resultHandler(error);
                     }
@@ -355,9 +355,18 @@ typedef void(^ResultHandler)(NSError *error);
     NSOperationQueue *operationQueue = [[NSOperationQueue alloc] init];
     [operationQueue addOperationWithBlock:^{
         //这个block语句块在子线程中执行
-        for (SigEnOceanPublishSetBaseRequestMessage *command in publishCommandDataList) {
+        NSMutableData *mData = [NSMutableData data];
+        for (int i=0; i<publishCommandDataList.count; i++) {
+            SigEnOceanPublishSetBaseRequestMessage *command = publishCommandDataList[i];
+            if (i==0) {
+                [mData appendData:command.parameters];
+            } else {
+                [mData appendData:[command.parameters subdataWithRange:NSMakeRange(1, command.parameters.length - 1)]];
+            }
+        }
+        if (mData.length > 0) {
             dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-            [SDKLibCommand sendEnOceanPublishSetRequestMessageWithDestinationAddress:destinationAddress payloadData:command.parameters successCallback:^(UInt16 source, UInt16 destination, SigMeshMessage * _Nonnull responseMessage) {
+            [SDKLibCommand sendEnOceanPublishSetRequestMessageWithDestinationAddress:destinationAddress payloadData:mData successCallback:^(UInt16 source, UInt16 destination, SigMeshMessage * _Nonnull responseMessage) {
                 if (weakSelf.isSettingPublish && [weakSelf.publishAddresses containsObject:@(source)]) {
                     SigEnOceanResponseMessage *message = [[SigEnOceanResponseMessage alloc] initWithParameters:responseMessage.parameters];
                     if (message && message.vendorSubOpCode == VendorSubOpCode_publishSet) {
@@ -376,7 +385,7 @@ typedef void(^ResultHandler)(NSError *error);
                             dispatch_async(dispatch_get_main_queue(), ^{
                                 [NSObject cancelPreviousPerformRequestsWithTarget:weakSelf selector:@selector(sendPublishSetCommandTimeOutAction) object:nil];
                             });
-                            weakSelf.isDeletePairing = NO;
+                            weakSelf.isSettingPublish = NO;
                             if (resultHandler) {
                                 resultHandler(error);
                             }
@@ -393,25 +402,14 @@ typedef void(^ResultHandler)(NSError *error);
             }];
             //Most provide 10 seconds to sendEnOceanPublishSetRequestMessage
             dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 10.0));
-            if (isFailed) {
-                //callback fail
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [NSObject cancelPreviousPerformRequestsWithTarget:weakSelf selector:@selector(sendPublishSetCommandTimeOutAction) object:nil];
-                });
-                weakSelf.isSettingPublish = NO;
-                if (resultHandler) {
-                    resultHandler(e);
-                }
-                return;
+            //callback success
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [NSObject cancelPreviousPerformRequestsWithTarget:weakSelf selector:@selector(sendPublishSetCommandTimeOutAction) object:nil];
+            });
+            weakSelf.isSettingPublish = NO;
+            if (resultHandler) {
+                resultHandler(e);
             }
-        }
-        //callback success
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [NSObject cancelPreviousPerformRequestsWithTarget:weakSelf selector:@selector(sendPublishSetCommandTimeOutAction) object:nil];
-        });
-        weakSelf.isSettingPublish = NO;
-        if (resultHandler) {
-            resultHandler(nil);
         }
     }];
 }

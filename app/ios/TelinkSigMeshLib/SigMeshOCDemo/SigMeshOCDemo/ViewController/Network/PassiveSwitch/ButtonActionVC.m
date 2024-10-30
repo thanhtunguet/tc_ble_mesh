@@ -185,8 +185,8 @@
 
 // return NO to disallow editing.
 - (BOOL)textFieldShouldBeginEditing:(UITextField *)textField {
-    //CT需要选择组号
-    if (self.itemInfo.type == EnOceanButtonItemType_CT && textField == self.publishTF) {
+    //Lighting CT需要选择组号
+    if ((self.itemInfo.type == EnOceanButtonItemType_CT || self.itemInfo.type == EnOceanButtonItemType_Light) && textField == self.publishTF) {
         [self showGroupListUIWithTextField:textField];
         return NO;
     }
@@ -214,6 +214,8 @@
         UIAlertAction *alertT = [UIAlertAction actionWithTitle:group.name style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             if (self.itemInfo.type == EnOceanButtonItemType_CT) {
                 textField.text = [NSString stringWithFormat:@"%04X", [SigDataSource.share getExtendGroupAddressWithBaseGroupAddress:group.intAddress]+1];
+            } else if (self.itemInfo.type == EnOceanButtonItemType_Light) {
+                textField.text = [NSString stringWithFormat:@"%04X", [SigDataSource.share getExtendGroupAddressWithBaseGroupAddress:group.intAddress]];
             }
         }];
         [actionSheet addAction:alertT];

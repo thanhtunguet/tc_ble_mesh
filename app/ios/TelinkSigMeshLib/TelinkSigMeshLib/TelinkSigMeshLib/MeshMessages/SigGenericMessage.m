@@ -17471,8 +17471,9 @@ SigGenericDeltaSet|SigGenericDeltaSetUnacknowledged|SigGenericLevelSet|SigGeneri
     /// Use the init method of the parent class to initialize some properties of the parent class of the subclass instance.
     if (self = [super init]) {
         /// Initialize self.
-        self.commandLength = 8;
+        self.commandLength = 8+1;
         self.commandType = EnOceanPublishSetType_generic;
+        _buttonIndex = buttonIndex;
         self.unicastAddressOfEnOcean = unicastAddressOfEnOcean;
         _publishAddress = publishAddress;
         _onOff = onOff;
@@ -17493,6 +17494,7 @@ SigGenericDeltaSet|SigGenericDeltaSetUnacknowledged|SigGenericLevelSet|SigGeneri
         /// Initialize self.
         self.commandLength = 9;
         self.commandType = EnOceanPublishSetType_generic;
+        _buttonIndex = buttonIndex;
         self.unicastAddressOfEnOcean = unicastAddressOfEnOcean;
         _publishAddress = publishAddress;
         _sceneId = sceneId;
@@ -17511,8 +17513,9 @@ SigGenericDeltaSet|SigGenericDeltaSetUnacknowledged|SigGenericLevelSet|SigGeneri
     /// Use the init method of the parent class to initialize some properties of the parent class of the subclass instance.
     if (self = [super init]) {
         /// Initialize self.
-        self.commandLength = 11;
+        self.commandLength = 11+1;
         self.commandType = EnOceanPublishSetType_generic;
+        _buttonIndex = buttonIndex;
         self.unicastAddressOfEnOcean = unicastAddressOfEnOcean;
         _publishAddress = publishAddress;
         _deltaValue = deltaValue;
@@ -17533,10 +17536,13 @@ SigGenericDeltaSet|SigGenericDeltaSetUnacknowledged|SigGenericLevelSet|SigGeneri
     [mData appendBytes:&tem16 length:2];
     tem16 = _publishAddress;
     [mData appendBytes:&tem16 length:2];
-    tem16 = _opCodeType;
+    tem16 = CFSwapInt16HostToBig(_opCodeType);
     [mData appendBytes:&tem16 length:2];
     if (_opCodeType == SigOpCode_genericOnOffSetUnacknowledged) {
         tem8 = _onOff ? 1 : 0;
+        [mData appendBytes:&tem8 length:1];
+        // tid=0
+        tem8 = 0;
         [mData appendBytes:&tem8 length:1];
     } else if (_opCodeType == SigOpCode_sceneRecallUnacknowledged) {
         tem16 = _sceneId;
@@ -17544,10 +17550,10 @@ SigGenericDeltaSet|SigGenericDeltaSetUnacknowledged|SigGenericLevelSet|SigGeneri
     } else if (_opCodeType == SigOpCode_genericDeltaSetUnacknowledged) {
         UInt32 tem32 = _deltaValue;
         [mData appendBytes:&tem32 length:4];
+        // tid=0
+        tem8 = 0;
+        [mData appendBytes:&tem8 length:1];
     }
-    // tid=0
-    tem8 = 0;
-    [mData appendBytes:&tem8 length:1];
     // transitionTime
     if (self.transitionTime != nil) {
         tem8 = self.transitionTime.intValue;
