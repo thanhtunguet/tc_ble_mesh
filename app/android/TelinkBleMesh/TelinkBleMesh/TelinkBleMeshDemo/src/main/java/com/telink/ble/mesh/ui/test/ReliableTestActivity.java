@@ -31,14 +31,13 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.telink.ble.mesh.TelinkMeshApplication;
 import com.telink.ble.mesh.core.message.NotificationMessage;
 import com.telink.ble.mesh.core.message.Opcode;
-import com.telink.ble.mesh.core.message.generic.OnOffSetMessage;
+import com.telink.ble.mesh.core.message.generic.OnOffGetMessage;
 import com.telink.ble.mesh.core.message.generic.OnOffStatusMessage;
 import com.telink.ble.mesh.demo.R;
 import com.telink.ble.mesh.foundation.Event;
@@ -62,47 +61,13 @@ import java.util.Locale;
  * Created by kee on 2021/3/17.
  */
 
-public class ResponseTestActivity extends BaseActivity implements View.OnClickListener, EventListener<String> {
+public class ReliableTestActivity extends BaseActivity implements View.OnClickListener, EventListener<String> {
 
-    private final String[] CMD_ACTION = {
-            "ALL ON",
-            "ALL OFF"};
     private int appKeyIndex;
     private Handler mHandler = new Handler();
-    private Button btn_start;
-    private EditText et_cmd_action;
-    private EditText et_interval;
-    private EditText et_cnt;
+    private Button btn_refresh;
+    private EditText et_rsp_max, et_retry_cnt;
     private CheckBox cb_scroll;
-    private AlertDialog cmdDialog;
-    /**
-     * read from text edit
-     */
-    private int targetCnt = 0;
-
-    /**
-     * 0 for ALL OFF
-     * 1 for ALL ON
-     */
-    private int cmdType = 1;
-
-    /**
-     * test interval
-     */
-    private int interval = 3 * 1000;
-    /**
-     * test count
-     */
-    private int testCnt = 0;
-
-    /**
-     * on/off status received every round
-     */
-    private int roundRcvCnt = 0;
-
-    private int successCnt = 0;
-
-    private long roundStartTime = 0;
 
     private boolean autoScroll = true;
 
@@ -112,6 +77,9 @@ public class ResponseTestActivity extends BaseActivity implements View.OnClickLi
 
     private LogInfoAdapter logInfoAdapter;
 
+    long testStartTime = 0;
+
+    int rsvCnt = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,7 +87,7 @@ public class ResponseTestActivity extends BaseActivity implements View.OnClickLi
         if (!validateNormalStart(savedInstanceState)) {
             return;
         }
-        setContentView(R.layout.activity_response_test);
+        setContentView(R.layout.activity_reliable_test);
         initTitle();
 
         logInfoAdapter = new LogInfoAdapter(this, logs);
@@ -128,18 +96,11 @@ public class ResponseTestActivity extends BaseActivity implements View.OnClickLi
         rv_log.setAdapter(logInfoAdapter);
         cb_scroll = findViewById(R.id.cb_scroll);
         autoScroll = cb_scroll.isChecked();
-        cb_scroll.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                autoScroll = isChecked;
-            }
-        });
-        et_cmd_action = findViewById(R.id.et_cmd_action);
-        et_cmd_action.setOnClickListener(this);
-        et_interval = findViewById(R.id.et_interval);
-        et_cnt = findViewById(R.id.et_cnt);
-        btn_start = findViewById(R.id.btn_start);
-        btn_start.setOnClickListener(this);
+        cb_scroll.setOnCheckedChangeListener((buttonView, isChecked) -> autoScroll = isChecked);
+        et_rsp_max = findViewById(R.id.et_rsp_max);
+        et_retry_cnt = findViewById(R.id.et_retry_cnt);
+        btn_refresh = findViewById(R.id.btn_refresh);
+        btn_refresh.setOnClickListener(this);
         findViewById(R.id.btn_clear_log).setOnClickListener(this);
         appKeyIndex = TelinkMeshApplication.getInstance().getMeshInfo().getDefaultAppKeyIndex();
 
@@ -151,7 +112,7 @@ public class ResponseTestActivity extends BaseActivity implements View.OnClickLi
 
     private void initTitle() {
         enableBackNav(true);
-        setTitle("Response Test");
+        setTitle("Reliable Test");
     }
 
 
@@ -164,24 +125,10 @@ public class ResponseTestActivity extends BaseActivity implements View.OnClickLi
         }
     }
 
-    private void showActionDialog() {
-        if (cmdDialog == null) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setItems(CMD_ACTION, (dialog, which) -> {
-                cmdType = which;
-                et_cmd_action.setText(CMD_ACTION[which]);
-                cmdDialog.dismiss();
-            });
-            builder.setTitle("Select First Command");
-            cmdDialog = builder.create();
-        }
-        cmdDialog.show();
-    }
-
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btn_start:
+            case R.id.btn_refresh:
                 startTest();
                 break;
 
@@ -190,7 +137,6 @@ public class ResponseTestActivity extends BaseActivity implements View.OnClickLi
                 break;
 
             case R.id.et_cmd_action:
-                showActionDialog();
                 break;
 
         }
@@ -198,81 +144,60 @@ public class ResponseTestActivity extends BaseActivity implements View.OnClickLi
 
 
     private void startTest() {
-        String intervalInput = et_interval.getText().toString().trim();
-        if (TextUtils.isEmpty(intervalInput)) {
-            toastMsg("input interval time");
+
+        String rspMaxInput = et_rsp_max.getText().toString().trim();
+        if (TextUtils.isEmpty(rspMaxInput)) {
+            toastMsg("input rsp max");
             return;
         }
-        interval = Integer.parseInt(intervalInput);
+        int rspMax = Integer.parseInt(rspMaxInput);
 
-        String countInput = et_cnt.getText().toString().trim();
-        if (TextUtils.isEmpty(countInput)) {
+        String retryCntInput = et_retry_cnt.getText().toString().trim();
+        if (TextUtils.isEmpty(retryCntInput)) {
             toastMsg("input count");
             return;
         }
-        targetCnt = Integer.parseInt(countInput);
-        successCnt = 0;
+        int retryCnt = Integer.parseInt(retryCntInput);
         enableUI(false);
-        roundStart();
+        roundStart(rspMax, retryCnt);
+
+
     }
 
     private void enableUI(boolean enable) {
-        btn_start.setEnabled(enable);
-        et_cmd_action.setEnabled(enable);
-        et_interval.setEnabled(enable);
-        et_cnt.setEnabled(enable);
+        btn_refresh.setEnabled(enable);
+        et_retry_cnt.setEnabled(enable);
+        et_rsp_max.setEnabled(enable);
     }
 
-    private void roundStart() {
-        addLog(String.format(Locale.getDefault(), "round start(%d)", testCnt + 1));
-        roundRcvCnt = 0;
-        roundStartTime = System.currentTimeMillis();
-        sendOffCmd();
-    }
-
-    private void sendOffCmd() {
-        String onOff = cmdType == 0 ? "OFF(0)" : "ON(1)";
-        addLog(" send on/off - " + onOff);
-        cmdType = cmdType == 0 ? 1 : 0;
-        int rspMax = TelinkMeshApplication.getInstance().getMeshInfo().getOnlineCountInAll();
-        OnOffSetMessage offSetMessage = OnOffSetMessage.getSimple(0xFFFF, appKeyIndex, cmdType, true, rspMax);
-        offSetMessage.setRetryCnt(0);
-        offSetMessage.setComplete(true);
-        if (!MeshService.getInstance().sendMeshMessage(offSetMessage)) {
+    private void roundStart(int rspMax, int retryCnt) {
+        addLog(String.format(Locale.getDefault(), "test start => rsp max=%d , retry cnt=%d", rspMax, retryCnt));
+        testStartTime = System.currentTimeMillis();
+        rsvCnt = 0;
+        //        int rspMax = TelinkMeshApplication.getInstance().getMeshInfo().getOnlineCountInAll();
+        OnOffGetMessage message = OnOffGetMessage.getSimple(0xFFFF, appKeyIndex, rspMax);
+        message.setRetryCnt(retryCnt);
+        if (!MeshService.getInstance().sendMeshMessage(message)) {
             addLog("err: cmd send fail");
-            onRoundComplete(0, false);
+            onTestComplete(0, false);
         }
     }
-
-    private Runnable nextRoundTask = this::roundStart;
 
     private void clearLog() {
         logs.clear();
         logInfoAdapter.notifyDataSetChanged();
-//        if (autoScroll) {
-//            rv_log.smoothScrollToPosition(0);
-//        }
     }
 
 
     /**
      * round complete, prepare for next round
      */
-    private void onRoundComplete(long timeSpent, boolean isSuccess) {
-        addLog(String.format(Locale.getDefault(), "time spent(ms) : %d - %s", timeSpent, isSuccess ? "success" : "fail"));
-        if (isSuccess) {
-            successCnt += 1;
-        }
-        addLog(String.format(Locale.getDefault(), "round complete (%d) - success(%d) \n\n", testCnt + 1, successCnt));
-        testCnt++;
-        if (testCnt < targetCnt) {
-            mHandler.postDelayed(nextRoundTask, interval);
-        } else {
-            addLog(" ===== test complete ===== \n\n");
-            testCnt = 0;
-            successCnt = 0;
-            enableUI(true);
-        }
+    private void onTestComplete(long timeSpent, boolean isSuccess) {
+        addLog(String.format(Locale.getDefault(), "test complete => result=%s , time spent(ms)=%d , rsp=%d",
+                isSuccess ? "success" : "fail",
+                timeSpent, rsvCnt));
+
+        enableUI(true);
     }
 
     private void addLog(String log) {
@@ -281,7 +206,7 @@ public class ResponseTestActivity extends BaseActivity implements View.OnClickLi
 
     private void addLog(String log, int level) {
         MeshLogger.d(log);
-        logs.add(new LogInfo("RSP-TEST", log, level));
+        logs.add(new LogInfo("Reliable-TEST", log, level));
         logInfoAdapter.notifyDataSetChanged();
         if (autoScroll) {
             rv_log.smoothScrollToPosition(logs.size() - 1);
@@ -294,6 +219,7 @@ public class ResponseTestActivity extends BaseActivity implements View.OnClickLi
             NotificationMessage notificationMessage = ((StatusNotificationEvent) event).getNotificationMessage();
             OnOffStatusMessage msg = (OnOffStatusMessage) notificationMessage.getStatusMessage();
             int onOff = msg.isComplete() ? msg.getTargetOnOff() : msg.getPresentOnOff();
+            rsvCnt += 1;
 //            addLog(String.format("msg received: on/off -- %b | address -- %04X", onOff == 1, notificationMessage.getSrc()));
 
         } else if (event.getType().equals(ReliableMessageProcessEvent.EVENT_TYPE_MSG_PROCESS_COMPLETE)) {
@@ -305,7 +231,7 @@ public class ResponseTestActivity extends BaseActivity implements View.OnClickLi
             }
             addLog(String.format(Locale.getDefault(), "on/off msg complete :   rspCnt: %d rspMax: %d  success: %b",
                     msgPcEvent.getRspCount(), msgPcEvent.getRspMax(), msgPcEvent.isSuccess()));
-            onRoundComplete(System.currentTimeMillis() - roundStartTime, success);
+            onTestComplete(System.currentTimeMillis() - testStartTime, success);
         }
     }
 
