@@ -1770,6 +1770,7 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
             // waiting for gatt disconnected callback
             log("ota complete -> waiting for gatt disconnect cb");
             isGattOtaDisconnectWaiting = true;
+            mDelayHandler.removeCallbacks(GATT_OTA_SUCCESS_TASK);
             mDelayHandler.postDelayed(GATT_OTA_SUCCESS_TASK, 5 * 1000); // To prevent the event not being triggered because the gatt not disconnected
         } else {
             resetAction();
@@ -1788,7 +1789,7 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
 
     private void onOtaSuccess() {
         mDelayHandler.removeCallbacks(GATT_OTA_SUCCESS_TASK);
-        isGattOtaDisconnectWaiting = true;
+        isGattOtaDisconnectWaiting = false;
         resetAction();
         this.idle(false);
         String evenType = GattOtaEvent.EVENT_TYPE_OTA_SUCCESS;
