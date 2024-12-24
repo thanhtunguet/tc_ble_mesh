@@ -363,8 +363,7 @@ class FUDistributor implements BlobTransferCallback {
                 return;
             }
         }
-        if ((opcode == Opcode.FIRMWARE_UPDATE_STATUS)
-        ) {
+        if ((opcode == Opcode.FIRMWARE_UPDATE_STATUS)) {
             onFirmwareUpdateStatus((FirmwareUpdateStatusMessage) message.getStatusMessage());
         } else if (step == STEP_BLOB_TRANSFER) {
             transfer.onTransferNotification(message);
@@ -399,7 +398,7 @@ class FUDistributor implements BlobTransferCallback {
                     || (step == STEP_UPDATE_APPLY && phase == FirmwareUpdateStatusMessage.PHASE_IDLE);*/
             final UpdatePhase phase = UpdatePhase.valueOf(firmwareUpdateStatusMessage.getPhase() & 0xFF);
             if (step == STEP_UPDATE_CONTINUE) {
-                boolean pass = phase == UpdatePhase.TRANSFER_ACTIVE;
+                boolean pass = phase == UpdatePhase.TRANSFER_ACTIVE || phase == UpdatePhase.APPLY_SUCCESS;
                 if (pass) {
                     this.step = STEP_BLOB_TRANSFER;
                     nextAction();

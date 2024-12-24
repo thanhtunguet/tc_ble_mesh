@@ -320,7 +320,10 @@ public class LightingControlActivity extends BaseActivity implements View.OnClic
             //
             LcModeStatusMessage statusMessage = (LcModeStatusMessage) ((StatusNotificationEvent) event).getNotificationMessage().getStatusMessage();
             lcEnabled = statusMessage.getMode() == 1;
-
+            if (lcEnabled != nodeInfo.lcEnabled) {
+                nodeInfo.lcEnabled = lcEnabled;
+                nodeInfo.save();
+            }
             runOnUiThread(() -> {
                 switch_mode.setChecked(lcEnabled);
             });

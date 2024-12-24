@@ -39,6 +39,7 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -54,10 +55,12 @@ import com.telink.ble.mesh.core.access.fu.UpdatePolicy;
 import com.telink.ble.mesh.core.message.MeshSigModel;
 import com.telink.ble.mesh.core.message.NotificationMessage;
 import com.telink.ble.mesh.core.message.config.NetworkTransmitGetMessage;
+import com.telink.ble.mesh.core.message.config.NetworkTransmitStatusMessage;
 import com.telink.ble.mesh.core.message.firmwareupdate.AdditionalInformation;
 import com.telink.ble.mesh.core.message.firmwareupdate.FirmwareUpdateInfoGetMessage;
 import com.telink.ble.mesh.core.message.firmwareupdate.FirmwareUpdateInfoStatusMessage;
 import com.telink.ble.mesh.core.networking.ExtendBearerMode;
+import com.telink.ble.mesh.core.networking.NetworkingController;
 import com.telink.ble.mesh.demo.R;
 import com.telink.ble.mesh.entity.FirmwareUpdateConfiguration;
 import com.telink.ble.mesh.entity.MeshUpdatingDevice;
@@ -221,6 +224,8 @@ public class FUActivity extends BaseActivity implements View.OnClickListener,
 
     private ExtendBearerMode extendBearerMode;
 
+    private long networkInterval = NetworkingController.NETWORK_INTERVAL_DEFAULT;
+
 
     @SuppressLint("HandlerLeak")
     private Handler infoHandler = new Handler() {
@@ -262,8 +267,7 @@ public class FUActivity extends BaseActivity implements View.OnClickListener,
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         extendBearerMode = SharedPreferenceHelper.getExtendBearerMode(this);
         mesh = TelinkMeshApplication.getInstance().getMeshInfo();
-        setTitle("Mesh OTA");
-        enableBackNav(true);
+
         initView();
         addEventListeners();
         initBottomSheetDialog();
@@ -391,7 +395,7 @@ public class FUActivity extends BaseActivity implements View.OnClickListener,
             configuration.setCallback(this);
             configuration.setFirmwareId(firmwareId);
             configuration.setContinue(true);
-
+            configuration.setNetworkInterval(networkInterval);
             MeshOtaParameters meshOtaParameters = new MeshOtaParameters(configuration);
             isComplete = false;
             MeshService.getInstance().startMeshOta(meshOtaParameters);
@@ -416,6 +420,16 @@ public class FUActivity extends BaseActivity implements View.OnClickListener,
     }
 
     private void initView() {
+        Toolbar toolbar = findViewById(R.id.title_bar);
+        toolbar.inflateMenu(R.menu.menu_fu);
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.item_log) {
+                startActivity(new Intent(this, LogActivity.class));
+            }
+            return false;
+        });
+        setTitle("Mesh OTA");
+        enableBackNav(true);
         rv_device = findViewById(R.id.rv_device);
 
         rv_device.setLayoutManager(new LinearLayoutManager(this));
@@ -473,6 +487,7 @@ public class FUActivity extends BaseActivity implements View.OnClickListener,
 
         // firmware info
         TelinkMeshApplication.getInstance().addEventListener(FirmwareUpdateInfoStatusMessage.class.getName(), this);
+        TelinkMeshApplication.getInstance().addEventListener(NetworkTransmitStatusMessage.class.getName(), this);
 //        TelinkMeshApplication.getInstance().addEventListener(FirmwareMetadataStatusMessage.class.getName(), this);
 //        TelinkMeshApplication.getInstance().addEventListener(NodeStatusChangedEvent.EVENT_TYPE_NODE_STATUS_CHANGED, this);
         TelinkMeshApplication.getInstance().addEventListener(MeshEvent.EVENT_TYPE_DISCONNECTED, this);
@@ -576,7 +591,7 @@ public class FUActivity extends BaseActivity implements View.OnClickListener,
                 configuration.setProxyAddress(directAddress);
                 configuration.setCallback(this);
                 configuration.setFirmwareId(firmwareId);
-
+                configuration.setNetworkInterval(networkInterval);
                 MeshOtaParameters meshOtaParameters = new MeshOtaParameters(configuration);
                 isComplete = false;
                 appendLog("start firmware update : " + configuration.getBriefDesc(extendBearerMode));
@@ -661,6 +676,14 @@ public class FUActivity extends BaseActivity implements View.OnClickListener,
                 delayHandler.postDelayed(RECONNECT_TASK, 3 * 60 * 1000);
             }
             appendLog("GATT disconnected");
+        } else if (eventType.equals(NetworkTransmitStatusMessage.class.getName())) {
+            final NotificationMessage notificationMessage = ((StatusNotificationEvent) event).getNotificationMessage();
+            NetworkTransmitStatusMessage networkTransmitStatusMessage = (NetworkTransmitStatusMessage) notificationMessage.getStatusMessage();
+            int count = networkTransmitStatusMessage.getCount();
+            int interval = networkTransmitStatusMessage.getIntervalSteps();
+            long transmit = ((interval + 1) * 10 + 7) * (count + 1);
+            networkInterval = transmit;
+            appendLog("network transmit changed to => " + transmit);
         } else if (eventType.equals(FirmwareUpdateInfoStatusMessage.class.getName())) {
             final NotificationMessage notificationMessage = ((StatusNotificationEvent) event).getNotificationMessage();
             FirmwareUpdateInfoStatusMessage infoStatusMessage = (FirmwareUpdateInfoStatusMessage) notificationMessage.getStatusMessage();

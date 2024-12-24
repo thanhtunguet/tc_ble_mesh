@@ -166,6 +166,8 @@ class BlobTransfer {
      */
     private TransferMode transferMode = TransferMode.PUSH;
 
+    private long networkInterval;
+
     public BlobTransfer(HandlerThread handlerThread, BlobTransferCallback callback) {
         this.delayHandler = new Handler(handlerThread.getLooper());
         this.transferCallback = callback;
@@ -182,7 +184,7 @@ class BlobTransfer {
         this.blobId = configuration.getBlobId();
         this.appKeyIndex = configuration.getAppKeyIndex();
         this.groupAddress = configuration.getGroupAddress();
-
+        this.networkInterval = configuration.getNetworkInterval();
         this.targetDevices.clear();
         this.transferType = type;
         log("transfer begin: " + type);
@@ -198,7 +200,8 @@ class BlobTransfer {
 
     public void begin(boolean isContinue) {
         log(String.format(Locale.getDefault(), "blob transfer begin : continue-%b step-%02d ", isContinue, step));
-        NetworkingController.netPktSendInterval = NetworkingController.NETWORK_INTERVAL_FOR_FU;
+        NetworkingController.netPktSendInterval = networkInterval;
+        log("network transmit changed : " + networkInterval);
         if (isContinue) {
             log("blob transfer continue");
 //            step = STEP_BLOB_CHUNK_SENDING;
@@ -221,6 +224,7 @@ class BlobTransfer {
 
     void clear() {
         NetworkingController.netPktSendInterval = NetworkingController.NETWORK_INTERVAL_DEFAULT;
+        log("network transmit revert : " + NetworkingController.NETWORK_INTERVAL_DEFAULT);
         this.step = STEP_IDLE;
         this.delayHandler.removeCallbacksAndMessages(null);
     }
@@ -509,7 +513,11 @@ class BlobTransfer {
         }
 
         if (targetDevices.get(nodeIndex).address != src) {
-            log("blob transfer unexpected notification src", MeshLogger.LEVEL_WARN);
+            if (opcode == Opcode.BLOB_INFORMATION_STATUS || opcode == Opcode.BLOB_TRANSFER_STATUS ||
+                    opcode == Opcode.BLOB_BLOCK_STATUS || opcode == Opcode.BLOB_PARTIAL_BLOCK_REPORT) {
+                // only report error for blob transfer message
+                log("blob transfer unexpected notification src", MeshLogger.LEVEL_WARN);
+            }
             return;
         }
 
@@ -691,10 +699,10 @@ class BlobTransfer {
             final int unsegLen = getSegmentLen();
             final int segLen = unsegLen + 1;
             int segmentCnt = chunkMsgLen == unsegLen ? 1 : (chunkMsgLen % segLen == 0 ? chunkMsgLen / segLen : (chunkMsgLen / segLen + 1));
-            result = segmentCnt * NetworkingController.netPktSendInterval;
+            result = segmentCnt * NetworkingController.netPktSendInterval + 240;
 //        final long min = 5 * 1000;
-            // use 5000 when DLE disabled, use 300 when DLE enabled
-            final long min = unsegLen == NetworkingController.UNSEGMENTED_ACCESS_PAYLOAD_MAX_LENGTH_DEFAULT ? 5 * 1000 : 300;
+            // use 5000 when DLE disabled, use 300 when DLE enabled => changed to 3000
+            final long min = unsegLen == NetworkingController.UNSEGMENTED_ACCESS_PAYLOAD_MAX_LENGTH_DEFAULT ? 3000 : 300;
             result = Math.max(min, result);
         }
         log("chunk sending interval: " + result);

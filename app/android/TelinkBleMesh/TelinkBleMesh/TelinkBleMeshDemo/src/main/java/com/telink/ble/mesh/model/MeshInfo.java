@@ -245,7 +245,8 @@ public class MeshInfo implements Serializable, Cloneable {
             }
         }
         this.nodes.remove(node);
-        MeshInfoService.getInstance().removeNodeInfo(node);
+        this.excludedNodes.add(node);
+//        MeshInfoService.getInstance().removeNodeInfo(node);
         saveOrUpdate();
     }
 

@@ -290,7 +290,7 @@ public class NetworkingController {
     /**
      * used in blob transfer (firmware update)
      */
-    public static final long NETWORK_INTERVAL_FOR_FU = 180; // 240 ms // 320
+//    public static final long NETWORK_INTERVAL_FOR_FU = 180; // 240 ms // 320
 
 
     public static final long NETWORK_INTERVAL_DEFAULT = 240; // 240 ms // 320

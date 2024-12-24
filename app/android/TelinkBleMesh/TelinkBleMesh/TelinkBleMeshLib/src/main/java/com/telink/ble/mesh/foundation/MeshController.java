@@ -528,7 +528,7 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
      */
     private void initGattConnection(HandlerThread handlerThread) {
         mGattConnection = new GattConnection(mContext, handlerThread);
-        mGattConnection.setConnectionCallback(connectionCallback);
+        mGattConnection.setConnectionCallback(GATT_CONNECTION_CB);
     }
 
     /**
@@ -539,7 +539,7 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
      */
     private void initGattOtaController() {
         mGattOtaController = new GattOtaController(mGattConnection);
-        mGattOtaController.setCallback(gattOtaCallback);
+        mGattOtaController.setCallback(GATT_OTA_CB);
     }
 
     /**
@@ -1828,7 +1828,7 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
      * <p>
      * onNotify() method is implemented and handles notifications received from the Bluetooth GATT service.
      */
-    private GattConnection.ConnectionCallback connectionCallback = new GattConnection.ConnectionCallback() {
+    private GattConnection.ConnectionCallback GATT_CONNECTION_CB = new GattConnection.ConnectionCallback() {
         @Override
         public void onConnected() { /* ignore */}
 
@@ -1864,11 +1864,11 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
         @Override
         public void onNotify(UUID serviceUUID, UUID charUUID, byte[] data) {
             if (charUUID.equals(UUIDInfo.CHARACTERISTIC_ONLINE_STATUS)) {
-                log("online status encrypted data: " + Arrays.bytesToHexString(data, ":"));
-                MeshLogger.d("online data: " + Arrays.bytesToHexString(data));
-                MeshLogger.d("online key: " + Arrays.bytesToHexString(networkBeaconKey));
+//                log("online status encrypted data: " + Arrays.bytesToHexString(data, ":"));
+//                MeshLogger.d("online data: " + Arrays.bytesToHexString(data));
+//                MeshLogger.d("online key: " + Arrays.bytesToHexString(networkBeaconKey));
                 byte[] decrypted = Encipher.decryptOnlineStatus(data, networkBeaconKey);
-                MeshLogger.d("online dec: " + Arrays.bytesToHexString(decrypted));
+//                MeshLogger.d("online dec: " + Arrays.bytesToHexString(decrypted));
                 if (decrypted != null) {
                     log("online status decrypted data: " + Arrays.bytesToHexString(decrypted, ":"));
                     onOnlineStatusNotify(decrypted);
@@ -1886,7 +1886,7 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
     /**
      * handle the OTA state changed during OTA processing
      */
-    private GattOtaController.GattOtaCallback gattOtaCallback = new GattOtaController.GattOtaCallback() {
+    private GattOtaController.GattOtaCallback GATT_OTA_CB = new GattOtaController.GattOtaCallback() {
 
         @Override
         public void onOtaStateChanged(int state) {
