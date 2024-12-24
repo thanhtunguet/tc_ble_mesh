@@ -208,6 +208,9 @@ public class NodeInfo implements Serializable {
     /**
      * lighting control enabled
      */
+    public boolean lcEnabled = true;
+
+
     public ToOne<NodeLcProps> nodeLcProps;
 
 
@@ -558,8 +561,20 @@ public class NodeInfo implements Serializable {
         }
     }
 
+
     public boolean isSensor() {
-        return getTargetEleAdr(MeshSigModel.SIG_MD_SENSOR_S.modelId) != -1;
+        return getTargetEleAdr(MeshSigModel.SIG_MD_SENSOR_S.modelId) != -1
+                && getTargetEleAdr(MeshSigModel.SIG_MD_LIGHTNESS_S.modelId) == -1;
+    }
+
+    /**
+     * contains sensor server model and lightness server model,
+     * because the sensor dose not contains lightness function
+     * @return
+     */
+    public boolean isGateway(){
+        return getTargetEleAdr(MeshSigModel.SIG_MD_SENSOR_S.modelId) != -1
+                && getTargetEleAdr(MeshSigModel.SIG_MD_LIGHTNESS_S.modelId) != -1;
     }
 
     public NodeSensorState getFirstSensorState() {
