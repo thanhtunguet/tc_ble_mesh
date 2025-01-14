@@ -1,5 +1,5 @@
 /********************************************************************************************************
- * @file GroupInfo.java
+ * @file NlcUnion.java
  *
  * @brief for TLSR chips
  *
@@ -26,43 +26,50 @@ import java.io.Serializable;
 
 import io.objectbox.annotation.Entity;
 import io.objectbox.annotation.Id;
+import io.objectbox.relation.ToMany;
 
 /**
  * Created by kee on 2017/8/18.
  */
-
 @Entity
-public class GroupInfo implements Serializable {
+public class NlcUnion implements Serializable {
     @Id
     public long id;
+
     /**
-     * Group name
+     * union name
+     *
+     * @deprecated
      */
     public String name;
 
     /**
-     * Group address
+     * sensors
      */
-    public int address;
+    public ToMany<NodeInfo> sensors;
+
+    /**
+     * publish address
+     * {@link PublishModel#period}
+     */
+    public long publishPeriod;
+
+    /**
+     * publish address
+     * 0 for invalid
+     * {@link PublishModel#address}
+     */
+    public int publishAddress = 0;
 
     public boolean selected = false;
 
-    public int getExtendAddress(int offset) {
-        return (address - 0xC000) * 0x10 + 0xD000 + offset; // 0xC000 -> 0xD000
-    }
 
-
-    public static int getExtendAddress(int address, int offset) {
-        return (address - 0xC000) * 0x10 + 0xD000 + offset; // 0xC000 -> 0xD000
-    }
-
-    /**
-     * get formatted name and address
-     * %s(%04X)
-     *
-     * @return
-     */
-    public String getFmtNameAdr() {
-        return String.format("%s(0x%04X)", name, address);
+    public void addSensor(NodeInfo sensor) {
+        for (NodeInfo node : sensors) {
+            if (node.meshAddress == sensor.meshAddress) {
+                return;
+            }
+        }
+        sensors.add(sensor);
     }
 }

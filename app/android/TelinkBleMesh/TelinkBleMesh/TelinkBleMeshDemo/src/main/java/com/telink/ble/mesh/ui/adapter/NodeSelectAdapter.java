@@ -33,7 +33,6 @@ import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.telink.ble.mesh.core.message.MeshSigModel;
 import com.telink.ble.mesh.demo.R;
 import com.telink.ble.mesh.model.NodeInfo;
 import com.telink.ble.mesh.ui.IconGenerator;
@@ -41,19 +40,20 @@ import com.telink.ble.mesh.ui.IconGenerator;
 import java.util.List;
 
 /**
- * @deprecated
  * select device
  * Created by kee on 2017/8/18.
  */
-public class DeviceSelectAdapter extends BaseSelectableListAdapter<DeviceSelectAdapter.ViewHolder> {
+public class NodeSelectAdapter extends BaseSelectableListAdapter<NodeSelectAdapter.ViewHolder> {
 
     private Context mContext;
     private List<NodeInfo> mDevices;
+    boolean canSelectMultiple;
 
 
-    public DeviceSelectAdapter(Context context, List<NodeInfo> devices) {
+    public NodeSelectAdapter(Context context, List<NodeInfo> devices, boolean canSelectMultiple) {
         this.mContext = context;
         this.mDevices = devices;
+        this.canSelectMultiple = canSelectMultiple;
     }
 
     public boolean allSelected() {
@@ -95,7 +95,8 @@ public class DeviceSelectAdapter extends BaseSelectableListAdapter<DeviceSelectA
 
         final int pid = deviceInfo.compositionData != null ? deviceInfo.compositionData.pid : 0;
         holder.iv_device.setImageResource(IconGenerator.getIcon(deviceInfo));
-        holder.tv_device_info.setText(String.format("Name-%s\nAdr-0x%04X\non/off:%s", deviceInfo.getName(), deviceInfo.meshAddress, deviceInfo.getOnlineState().toString()));;
+        holder.tv_device_info.setText(String.format("Name-%s\nAdr-0x%04X\non/off:%s", deviceInfo.getName(), deviceInfo.meshAddress, deviceInfo.getOnlineState().toString()));
+        ;
         /*holder.tv_device_info.setText(mContext.getString(R.string.device_state_desc,
                 String.format("%04X", deviceInfo.meshAddress),
                 deviceInfo.getOnlineState().toString()));*/
@@ -119,7 +120,7 @@ public class DeviceSelectAdapter extends BaseSelectableListAdapter<DeviceSelectA
             int position = (int) buttonView.getTag();
             mDevices.get(position).selected = isChecked;
             if (statusChangedListener != null) {
-                statusChangedListener.onSelectStatusChanged(DeviceSelectAdapter.this);
+                statusChangedListener.onSelectStatusChanged(NodeSelectAdapter.this);
             }
         }
     };

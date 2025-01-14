@@ -25,6 +25,7 @@ package com.telink.ble.mesh.model.db;
 import com.telink.ble.mesh.model.GroupInfo;
 import com.telink.ble.mesh.model.MeshInfo;
 import com.telink.ble.mesh.model.MeshInfo_;
+import com.telink.ble.mesh.model.NlcUnion;
 import com.telink.ble.mesh.model.NodeInfo;
 import com.telink.ble.mesh.model.NodeLcProps;
 import com.telink.ble.mesh.model.OobInfo;
@@ -51,6 +52,7 @@ public class MeshInfoService {
     private Query<MeshInfo> meshInfoQuery;
     private Query<OobInfo> oobInfoQuery;
     private Box<SwitchAction> switchActionBox;
+    private Box<NlcUnion> nlcUnionBox;
 
     private MeshInfoService() {
     }
@@ -69,6 +71,7 @@ public class MeshInfoService {
         groupInfoBox = store.boxFor(GroupInfo.class);
         switchActionBox = store.boxFor(SwitchAction.class);
         oobInfoQuery = oobInfoBox.query().build();
+        nlcUnionBox = store.boxFor(NlcUnion.class);
     }
 
     public MeshInfo getById(long id) {
@@ -121,7 +124,6 @@ public class MeshInfoService {
         MeshLogger.d("updateSwitchAction - " + action.id);
         switchActionBox.put(action);
     }
-
 
 
     public void updateNodeLcProps(NodeLcProps props) {
@@ -184,5 +186,14 @@ public class MeshInfoService {
 
     public void removeNodes(List<NodeInfo> nodes) {
         nodeInfoBox.remove(nodes);
+    }
+
+    public void removeNlcUnion(NlcUnion nlcUnion) {
+        nlcUnionBox.remove(nlcUnion);
+    }
+
+    public void updateNlcUnion(NlcUnion nlcUnion) {
+        MeshLogger.d("updateNlcUnion - " + nlcUnion.id);
+        nlcUnionBox.put(nlcUnion);
     }
 }

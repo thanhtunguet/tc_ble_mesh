@@ -1,5 +1,5 @@
 /********************************************************************************************************
- * @file DeviceSelectAdapter.java
+ * @file SensorSelectAdapter.java
  *
  * @brief for TLSR chips
  *
@@ -33,7 +33,6 @@ import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.telink.ble.mesh.core.message.MeshSigModel;
 import com.telink.ble.mesh.demo.R;
 import com.telink.ble.mesh.model.NodeInfo;
 import com.telink.ble.mesh.ui.IconGenerator;
@@ -41,23 +40,22 @@ import com.telink.ble.mesh.ui.IconGenerator;
 import java.util.List;
 
 /**
- * @deprecated
- * select device
+ * select sensor(s)
  * Created by kee on 2017/8/18.
  */
-public class DeviceSelectAdapter extends BaseSelectableListAdapter<DeviceSelectAdapter.ViewHolder> {
+public class SensorSelectAdapter extends BaseSelectableListAdapter<SensorSelectAdapter.ViewHolder> {
 
     private Context mContext;
-    private List<NodeInfo> mDevices;
+    private List<NodeInfo> sensors;
 
 
-    public DeviceSelectAdapter(Context context, List<NodeInfo> devices) {
+    public SensorSelectAdapter(Context context, List<NodeInfo> devices) {
         this.mContext = context;
-        this.mDevices = devices;
+        this.sensors = devices;
     }
 
     public boolean allSelected() {
-        for (NodeInfo deviceInfo : mDevices) {
+        for (NodeInfo deviceInfo : sensors) {
             if (!deviceInfo.selected) {
                 return false;
             }
@@ -66,7 +64,7 @@ public class DeviceSelectAdapter extends BaseSelectableListAdapter<DeviceSelectA
     }
 
     public void setAll(boolean selected) {
-        for (NodeInfo deviceInfo : mDevices) {
+        for (NodeInfo deviceInfo : sensors) {
             deviceInfo.selected = selected;
         }
         notifyDataSetChanged();
@@ -74,7 +72,7 @@ public class DeviceSelectAdapter extends BaseSelectableListAdapter<DeviceSelectA
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(mContext).inflate(R.layout.item_device_select, parent, false);
+        View itemView = LayoutInflater.from(mContext).inflate(R.layout.item_sensor_select, parent, false);
         ViewHolder holder = new ViewHolder(itemView);
         holder.iv_device = itemView.findViewById(R.id.iv_device);
         holder.tv_device_info = itemView.findViewById(R.id.tv_device_info);
@@ -84,21 +82,16 @@ public class DeviceSelectAdapter extends BaseSelectableListAdapter<DeviceSelectA
 
     @Override
     public int getItemCount() {
-        return mDevices == null ? 0 : mDevices.size();
+        return sensors == null ? 0 : sensors.size();
     }
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         super.onBindViewHolder(holder, position);
 
-        NodeInfo deviceInfo = mDevices.get(position);
-
-        final int pid = deviceInfo.compositionData != null ? deviceInfo.compositionData.pid : 0;
+        NodeInfo deviceInfo = sensors.get(position);
         holder.iv_device.setImageResource(IconGenerator.getIcon(deviceInfo));
-        holder.tv_device_info.setText(String.format("Name-%s\nAdr-0x%04X\non/off:%s", deviceInfo.getName(), deviceInfo.meshAddress, deviceInfo.getOnlineState().toString()));;
-        /*holder.tv_device_info.setText(mContext.getString(R.string.device_state_desc,
-                String.format("%04X", deviceInfo.meshAddress),
-                deviceInfo.getOnlineState().toString()));*/
+        holder.tv_device_info.setText(String.format("Name-%s\nAdr-0x%04X\non/off:%s", deviceInfo.getName(), deviceInfo.meshAddress, deviceInfo.getOnlineState().toString()));
 
         holder.cb_device.setTag(position);
 
@@ -117,9 +110,9 @@ public class DeviceSelectAdapter extends BaseSelectableListAdapter<DeviceSelectA
         @Override
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
             int position = (int) buttonView.getTag();
-            mDevices.get(position).selected = isChecked;
+            sensors.get(position).selected = isChecked;
             if (statusChangedListener != null) {
-                statusChangedListener.onSelectStatusChanged(DeviceSelectAdapter.this);
+                statusChangedListener.onSelectStatusChanged(SensorSelectAdapter.this);
             }
         }
     };

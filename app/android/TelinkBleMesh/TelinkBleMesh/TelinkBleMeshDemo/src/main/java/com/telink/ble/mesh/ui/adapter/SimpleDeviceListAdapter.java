@@ -23,62 +23,45 @@
 package com.telink.ble.mesh.ui.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.telink.ble.mesh.core.message.MeshSigModel;
 import com.telink.ble.mesh.demo.R;
 import com.telink.ble.mesh.model.NodeInfo;
 import com.telink.ble.mesh.ui.IconGenerator;
+import com.telink.ble.mesh.ui.LightingControlActivity;
+import com.telink.ble.mesh.ui.SensorControlActivity;
 
 import java.util.List;
 
 /**
- * @deprecated
  * select device
  * Created by kee on 2017/8/18.
  */
-public class DeviceSelectAdapter extends BaseSelectableListAdapter<DeviceSelectAdapter.ViewHolder> {
+public class SimpleDeviceListAdapter extends BaseRecyclerViewAdapter<SimpleDeviceListAdapter.ViewHolder> {
 
     private Context mContext;
     private List<NodeInfo> mDevices;
 
 
-    public DeviceSelectAdapter(Context context, List<NodeInfo> devices) {
+    public SimpleDeviceListAdapter(Context context, List<NodeInfo> devices) {
         this.mContext = context;
         this.mDevices = devices;
     }
 
-    public boolean allSelected() {
-        for (NodeInfo deviceInfo : mDevices) {
-            if (!deviceInfo.selected) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public void setAll(boolean selected) {
-        for (NodeInfo deviceInfo : mDevices) {
-            deviceInfo.selected = selected;
-        }
-        notifyDataSetChanged();
-    }
-
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(mContext).inflate(R.layout.item_device_select, parent, false);
+        View itemView = LayoutInflater.from(mContext).inflate(R.layout.item_device_list_simple, parent, false);
         ViewHolder holder = new ViewHolder(itemView);
         holder.iv_device = itemView.findViewById(R.id.iv_device);
+        holder.iv_setting = itemView.findViewById(R.id.iv_setting);
         holder.tv_device_info = itemView.findViewById(R.id.tv_device_info);
-        holder.cb_device = itemView.findViewById(R.id.cb_device);
         return holder;
     }
 
@@ -90,44 +73,23 @@ public class DeviceSelectAdapter extends BaseSelectableListAdapter<DeviceSelectA
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         super.onBindViewHolder(holder, position);
-
         NodeInfo deviceInfo = mDevices.get(position);
-
-        final int pid = deviceInfo.compositionData != null ? deviceInfo.compositionData.pid : 0;
         holder.iv_device.setImageResource(IconGenerator.getIcon(deviceInfo));
-        holder.tv_device_info.setText(String.format("Name-%s\nAdr-0x%04X\non/off:%s", deviceInfo.getName(), deviceInfo.meshAddress, deviceInfo.getOnlineState().toString()));;
-        /*holder.tv_device_info.setText(mContext.getString(R.string.device_state_desc,
-                String.format("%04X", deviceInfo.meshAddress),
-                deviceInfo.getOnlineState().toString()));*/
-
-        holder.cb_device.setTag(position);
-
-        if (!deviceInfo.isOffline()) {
-            //  && deviceInfo.getTargetEleAdr(MeshSigModel.SIG_MD_SCENE_S.modelId) != -1
-            holder.cb_device.setChecked(deviceInfo.selected);
-            holder.cb_device.setEnabled(true);
-            holder.cb_device.setOnCheckedChangeListener(this.checkedChangeListener);
-        } else {
-            holder.cb_device.setChecked(false);
-            holder.cb_device.setEnabled(false);
-        }
+//        holder.tv_device_info.setText(String.format("name : %s\nadr : 0x%04X", deviceInfo.getName(), deviceInfo.meshAddress));
+        holder.tv_device_info.setText(deviceInfo.getFmtNameAdr());
+        holder.iv_setting.setOnClickListener(v -> {
+            if (deviceInfo.isSensor()) {
+                mContext.startActivity(new Intent(mContext, SensorControlActivity.class).putExtra("meshAddress", deviceInfo.meshAddress));
+            } else {
+                mContext.startActivity(new Intent(mContext, LightingControlActivity.class).putExtra("meshAddress", deviceInfo.meshAddress));
+            }
+        });
     }
 
-    private CompoundButton.OnCheckedChangeListener checkedChangeListener = new CompoundButton.OnCheckedChangeListener() {
-        @Override
-        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-            int position = (int) buttonView.getTag();
-            mDevices.get(position).selected = isChecked;
-            if (statusChangedListener != null) {
-                statusChangedListener.onSelectStatusChanged(DeviceSelectAdapter.this);
-            }
-        }
-    };
 
     class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView iv_device;
+        ImageView iv_device, iv_setting;
         TextView tv_device_info;
-        CheckBox cb_device;
 
         public ViewHolder(View itemView) {
             super(itemView);
