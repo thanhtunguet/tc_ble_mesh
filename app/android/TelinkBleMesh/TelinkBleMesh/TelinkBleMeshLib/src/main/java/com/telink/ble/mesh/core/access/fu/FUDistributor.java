@@ -136,7 +136,7 @@ class FUDistributor implements BlobTransferCallback {
         this.appKeyIndex = configuration.getAppKeyIndex();
         this.connectedAddress = connectedAddress;
         this.isContinue = isContinue;
-        log("begin - " + configuration.getUpdatingDevices().size() + " -- isContinue? " + isContinue);
+        log("distribute begin - " + configuration.getUpdatingDevices().size() + " -- isContinue? " + isContinue);
         this.nodes = configuration.getUpdatingDevices();
         BlobTransferType transferType;
         int directAddress;
@@ -197,7 +197,6 @@ class FUDistributor implements BlobTransferCallback {
     }
 
     public void onDistributeCommandFailed(int opcode) {
-
         if ((step == STEP_UPDATE_START && opcode == Opcode.FIRMWARE_UPDATE_START.value)
                 || (step == STEP_UPDATE_APPLY && opcode == Opcode.FIRMWARE_UPDATE_APPLY.value)) {
             // to updating nodes
@@ -455,8 +454,12 @@ class FUDistributor implements BlobTransferCallback {
     }
 
 
+    private void log(String logInfo, int logLevel) {
+        actionHandler.onActionLog(LOG_TAG, logInfo, logLevel);
+    }
+
     private void log(String logInfo) {
-        MeshLogger.log(logInfo, LOG_TAG, MeshLogger.LEVEL_DEBUG);
+        log(logInfo, MeshLogger.DEFAULT_LEVEL);
     }
 
 }
