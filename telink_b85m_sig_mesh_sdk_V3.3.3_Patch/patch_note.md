@@ -1,61 +1,3 @@
-## V3.3.3_Patch_0002
-
-### Dependency Updates
-
-* telink_b85m_ble_single_connection_sdk_v3.4.1
-* mesh library commit log: 12154d14d25b6083815f98eb31b9c84ac35ae711
-* ble  library commit log: e90b226981817271f5d18b1e616334da31d048d6
-
-### Bug Fixes
-
-* N/A
-
-### Features
-
-* N/A
-
-### Performance Improvements
-
-* improve segment receive.
-
-### BREAKING CHANGES
-
-* N/A
-
-### Notes
-
-* to avoid compilation errors or loss of functionality, please update all files when upgrading the SDK.
-
-
-### Dependency Updates
-
-* telink_b85m_ble_single_connection_sdk_v3.4.1
-* mesh library commit log: 12154d14d25b6083815f98eb31b9c84ac35ae711
-* ble  library commit log: e90b226981817271f5d18b1e616334da31d048d6
-
-### Bug Fixes
-
-* N/A
-
-### Features
-
-* N/A
-
-### Performance Improvements
-
-* 优化分包接收。
-
-### BREAKING CHANGES
-
-* N/A
-
-### Notes
-
-* 为避免编译错误以及功能丢失，升级SDK时，请确认更新全部SDK文件。
-
-
-
-
 ## V3.3.3_Patch_0001
 
 ### Dependency Updates
@@ -101,11 +43,11 @@
 
 ### Performance Improvements
 
-* IV扇区增加crc16校验，使其在异常电压下更加健壮。
+* N/A
 
 ### BREAKING CHANGES
 
-* N/A
+* IV扇区增加crc16校验，使其在异常电压下更加健壮。
 
 ### Notes
 
