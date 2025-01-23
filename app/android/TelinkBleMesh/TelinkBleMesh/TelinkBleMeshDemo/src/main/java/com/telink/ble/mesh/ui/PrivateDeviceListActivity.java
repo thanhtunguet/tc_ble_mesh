@@ -1,5 +1,5 @@
 /********************************************************************************************************
- * @file OobListActivity.java
+ * @file PrivateDeviceListActivity.java
  *
  * @brief for TLSR chips
  *
@@ -24,11 +24,11 @@ package com.telink.ble.mesh.ui;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -39,9 +39,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.telink.ble.mesh.demo.R;
-import com.telink.ble.mesh.model.OobInfo;
+import com.telink.ble.mesh.entity.CompositionData;
+import com.telink.ble.mesh.model.PrivateDevice;
 import com.telink.ble.mesh.model.db.MeshInfoService;
-import com.telink.ble.mesh.ui.adapter.OOBListAdapter;
+import com.telink.ble.mesh.ui.adapter.PrivateDeviceListAdapter;
 import com.telink.ble.mesh.ui.file.FileSelectActivity;
 import com.telink.ble.mesh.util.Arrays;
 import com.telink.ble.mesh.util.MeshLogger;
@@ -54,25 +55,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * show static OOB list
+ * private device list
  */
-public class OobListActivity extends BaseActivity {
+public class PrivateDeviceListActivity extends BaseActivity {
 
-    private final String[] ACTIONS = new String[]{"Manual Input",
-            "Import from file"};
+    private final String[] ACTIONS = new String[]{"Manual Input Composition Data", "Batch Import from file"};
 
     private static final int MSG_IMPORT_COMPLETE = 10;
 
-    private static final int REQUEST_CODE_SELECT_DATABASE = 1;
+    private static final int REQUEST_CODE_SELECT_FILE = 1;
 
-    private static final int REQUEST_CODE_ADD_OOB = 2;
+    private static final int REQUEST_CODE_ADD_DEVICE = 2;
 
-    public static final int REQUEST_CODE_EDIT_OOB = 3;
+    public static final int REQUEST_CODE_EDIT_DEVICE = 3;
 
-
-    private OOBListAdapter mAdapter;
-
-    private AlertDialog.Builder actionSelectDialog;
+    private PrivateDeviceListAdapter mAdapter;
 
     @SuppressLint("HandlerLeak")
     private Handler mHandler = new Handler() {
@@ -82,12 +79,12 @@ public class OobListActivity extends BaseActivity {
             if (msg.what == MSG_IMPORT_COMPLETE) {
                 dismissWaitingDialog();
                 if (msg.obj != null) {
-                    List<OobInfo> oobFromFile = (List<OobInfo>) msg.obj;
-                    MeshInfoService.getInstance().addOobInfo(oobFromFile);
+                    List<PrivateDevice> deviceList = (List<PrivateDevice>) msg.obj;
+                    MeshInfoService.getInstance().updatePrivateDevice(deviceList.toArray(new PrivateDevice[0]));
                     mAdapter.resetData();
-                    Toast.makeText(OobListActivity.this, "Success : " + oobFromFile.size() + " oob imported", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(PrivateDeviceListActivity.this, "Success : " + deviceList.size() + " device imported", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(OobListActivity.this, "Import Fail: check the file format", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(PrivateDeviceListActivity.this, "Import Fail: check the file format", Toast.LENGTH_SHORT).show();
                 }
 
             }
@@ -102,57 +99,57 @@ public class OobListActivity extends BaseActivity {
         if (!validateNormalStart(savedInstanceState)) {
             return;
         }
-        setContentView(R.layout.activity_oob_info);
-        setTitle("OOB List");
+        setContentView(R.layout.activity_common_list);
+        setTitle("Private Device List");
         enableBackNav(true);
         Toolbar toolbar = findViewById(R.id.title_bar);
-        toolbar.inflateMenu(R.menu.oob_info);
+        toolbar.inflateMenu(R.menu.menu_add_clear);
+        // hide clear action
+        toolbar.getMenu().findItem(R.id.item_clear).setVisible(false);
         toolbar.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == R.id.item_oob_add) {
+            if (item.getItemId() == R.id.item_add) {
                 showModeSelectDialog();
-            } else if (item.getItemId() == R.id.item_oob_clear) {
+            } else if (item.getItemId() == R.id.item_clear) {
                 showClearDialog();
             }
             return false;
         });
 
-        mAdapter = new OOBListAdapter(this);
+        mAdapter = new PrivateDeviceListAdapter(this);
         mAdapter.setOnItemLongClickListener(position -> {
             showConfirmDialog("delete", (dialog, which) -> mAdapter.remove(position));
             return false;
         });
-        RecyclerView rv_oob = findViewById(R.id.rv_oob);
-        rv_oob.setLayoutManager(new LinearLayoutManager(this));
-        rv_oob.setAdapter(mAdapter);
+        RecyclerView rv_common = findViewById(R.id.rv_common);
+        rv_common.setLayoutManager(new LinearLayoutManager(this));
+        rv_common.setAdapter(mAdapter);
+        findViewById(R.id.ll_empty).setVisibility(View.GONE);
     }
 
 
     private void showModeSelectDialog() {
-        if (actionSelectDialog == null) {
-            actionSelectDialog = new AlertDialog.Builder(this);
-            actionSelectDialog.setItems(ACTIONS, (dialog, which) -> {
-                if (which == 0) {
-                    startActivityForResult(new Intent(OobListActivity.this, OOBEditActivity.class), REQUEST_CODE_ADD_OOB);
-                } else if (which == 1) {
-                    startActivityForResult(new Intent(OobListActivity.this, FileSelectActivity.class)
-                                    .putExtra(FileSelectActivity.EXTRA_SUFFIX, ".txt")
-                            , REQUEST_CODE_SELECT_DATABASE);
-                }
-            });
-            actionSelectDialog.setTitle("Select mode");
-
-        }
+        AlertDialog.Builder actionSelectDialog = new AlertDialog.Builder(this);
+        actionSelectDialog.setItems(ACTIONS, (dialog, which) -> {
+            if (which == 0) {
+                startActivityForResult(new Intent(PrivateDeviceListActivity.this, PrivateDeviceEditActivity.class), REQUEST_CODE_ADD_DEVICE);
+            } else if (which == 1) {
+                startActivityForResult(new Intent(PrivateDeviceListActivity.this, FileSelectActivity.class)
+                                .putExtra(FileSelectActivity.EXTRA_SUFFIX, ".txt")
+                        , REQUEST_CODE_SELECT_FILE);
+            }
+        });
+        actionSelectDialog.setTitle("Select mode");
         actionSelectDialog.show();
     }
 
+    /**
+     * @deprecated
+     */
     private void showClearDialog() {
-        showConfirmDialog("Wipe all oob info? ", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                MeshInfoService.getInstance().clearAllOobInfo();
-                toastMsg("Wipe oob info success");
-                mAdapter.resetData();
-            }
+        showConfirmDialog("Wipe all private device? ", (dialog, which) -> {
+//            MeshInfoService.getInstance().clearAllOobInfo();
+            toastMsg("Wipe all private device success");
+            mAdapter.resetData();
         });
     }
 
@@ -162,26 +159,26 @@ public class OobListActivity extends BaseActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode != Activity.RESULT_OK || data == null)
             return;
-        if (requestCode == REQUEST_CODE_SELECT_DATABASE) {
+        if (requestCode == REQUEST_CODE_SELECT_FILE) {
             final String path = data.getStringExtra(FileSelectActivity.EXTRA_RESULT);
             MeshLogger.log("select: " + path);
-            showWaitingDialog("parsing OOB database...");
+            showWaitingDialog("parsing private device database...");
             new Thread(() -> {
-                List<OobInfo> parseResult = parseOOBDatabase(path);
+                List<PrivateDevice> parseResult = parseDatabase(path);
                 mHandler.obtainMessage(MSG_IMPORT_COMPLETE, parseResult).sendToTarget();
             }).start();
-        } else if (requestCode == REQUEST_CODE_ADD_OOB) {
+        } else if (requestCode == REQUEST_CODE_ADD_DEVICE) {
             mAdapter.resetData();
-        } else if (requestCode == REQUEST_CODE_EDIT_OOB) {
+        } else if (requestCode == REQUEST_CODE_EDIT_DEVICE) {
             mAdapter.resetData();
         }
     }
 
 
     /**
-     * parse oob database
+     * parse database
      */
-    public List<OobInfo> parseOOBDatabase(String filePath) {
+    public List<PrivateDevice> parseDatabase(String filePath) {
         if (filePath == null) return null;
         File file = new File(filePath);
         if (!file.exists())
@@ -192,37 +189,32 @@ public class OobListActivity extends BaseActivity {
             fr = new FileReader(file);
             br = new BufferedReader(fr);
             String line;
-            long curTimestamp = System.currentTimeMillis();
-            List<OobInfo> result = null;
-            OobInfo oobInfo;
+            List<PrivateDevice> result = null;
+            PrivateDevice privateDevice;
             while ((line = br.readLine()) != null) {
-//                if (line.length() != 65) {
-//                    continue;
-//                }
                 String[] rawPair = line.split(" ");
                 /*
-                rawPair
-                16 bytes uuid + 16(32) bytes oob
+                [name] [cpsData]
+                example: ct xxxx
                  */
                 if (rawPair.length != 2 || rawPair[0].length() != 32 || (rawPair[1].length() != 32 && rawPair[1].length() != 64)) {
                     continue;
                 }
-                byte[] uuid = Arrays.hexToBytes(rawPair[0]);
-                byte[] oob = Arrays.hexToBytes(rawPair[1]);
+                String name = rawPair[0];
+                byte[] data = Arrays.hexToBytes(rawPair[1]);
 
-                oobInfo = new OobInfo();
-                oobInfo.deviceUUID = uuid;
-                oobInfo.oob = oob;
-                oobInfo.timestamp = curTimestamp;
-                oobInfo.importMode = OobInfo.IMPORT_MODE_FILE;
-                if (result == null) {
-                    result = new ArrayList<>();
+                CompositionData cpsData = CompositionData.from(data);
+                if (cpsData != null) {
+                    privateDevice = new PrivateDevice(name, cpsData);
+                    if (result == null) {
+                        result = new ArrayList<>();
+                    }
+                    result.add(privateDevice);
                 }
-                result.add(oobInfo);
             }
             return result;
         } catch (IOException | RuntimeException e) {
-
+            e.printStackTrace();
         } finally {
             if (br != null) {
                 try {

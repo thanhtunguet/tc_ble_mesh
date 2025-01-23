@@ -105,6 +105,15 @@ public class SharedPreferenceHelper {
      */
     private static final String KEY_NODE_SORT_TYPE = "com.telink.bluetooth.light.KEY_NODE_SORT_TYPE";
 
+    public static boolean isFirstLoad(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(SHARE_PREFERENCE_NAME, Context.MODE_PRIVATE);
+        if (sharedPreferences.contains(KEY_FIRST_LOAD)) {
+            return false;
+        }
+        sharedPreferences.edit().putBoolean(KEY_FIRST_LOAD, false).apply();
+        return true;
+    }
+
     public static boolean isLocationIgnore(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(SHARE_PREFERENCE_NAME, Context.MODE_PRIVATE);
         return sharedPreferences.getBoolean(KEY_LOCATION_IGNORE, false);

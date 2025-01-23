@@ -430,6 +430,8 @@
             android:windowSoftInputMode="stateAlwaysHidden"
             tools:ignore="LockedOrientationActivity" />
         <activity android:name="com.telink.ble.mesh.ui.NodeSelectActivity" />
+        <activity android:name="com.telink.ble.mesh.ui.PrivateDeviceListActivity" />
+        <activity android:name="com.telink.ble.mesh.ui.PrivateDeviceEditActivity" />
 
 
         <provider

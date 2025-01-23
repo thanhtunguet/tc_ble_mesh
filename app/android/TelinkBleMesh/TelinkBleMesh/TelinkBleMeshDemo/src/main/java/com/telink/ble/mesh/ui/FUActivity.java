@@ -599,7 +599,7 @@ public class FUActivity extends BaseActivity implements View.OnClickListener,
                 break;
 
             case R.id.tv_file_path:
-                startActivityForResult(new Intent(this, FileSelectActivity.class).putExtra(FileSelectActivity.KEY_SUFFIX, ".bin"), REQUEST_CODE_GET_FILE);
+                startActivityForResult(new Intent(this, FileSelectActivity.class).putExtra(FileSelectActivity.EXTRA_SUFFIX, ".bin"), REQUEST_CODE_GET_FILE);
                 break;
 
             case R.id.btn_get_version:
@@ -739,7 +739,7 @@ public class FUActivity extends BaseActivity implements View.OnClickListener,
         if (resultCode != Activity.RESULT_OK)
             return;
         if (requestCode == REQUEST_CODE_GET_FILE) {
-            String mPath = data.getStringExtra(FileSelectActivity.KEY_RESULT);
+            String mPath = data.getStringExtra(FileSelectActivity.EXTRA_RESULT);
             MeshLogger.log("select: " + mPath);
             readFirmware(mPath);
         } else if (requestCode == REQUEST_CODE_SELECT_DEVICE) {

@@ -41,6 +41,7 @@ import com.telink.ble.mesh.ui.DebugActivity;
 import com.telink.ble.mesh.ui.LogActivity;
 import com.telink.ble.mesh.ui.NetworkListActivity;
 import com.telink.ble.mesh.ui.OobListActivity;
+import com.telink.ble.mesh.ui.PrivateDeviceListActivity;
 import com.telink.ble.mesh.ui.SettingsActivity;
 import com.telink.ble.mesh.ui.test.IntervalTestActivity;
 import com.telink.ble.mesh.ui.test.ReliableTestActivity;
@@ -82,6 +83,7 @@ public class SettingFragment extends BaseFragment implements View.OnClickListene
         view.findViewById(R.id.view_oob).setOnClickListener(this);
         view.findViewById(R.id.view_log).setOnClickListener(this);
         view.findViewById(R.id.view_tests).setOnClickListener(this);
+        view.findViewById(R.id.view_pvt_dev).setOnClickListener(this);
 
 //        view.findViewById(R.id.view_tests).setVisibility(View.GONE); // for release
 
@@ -118,6 +120,7 @@ public class SettingFragment extends BaseFragment implements View.OnClickListene
                 Intent enableLocationIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                 startActivityForResult(enableLocationIntent, 1);
                 break;
+
             case R.id.btn_location_ignore:
                 SharedPreferenceHelper.setLocationIgnore(getActivity(), true);
                 ll_location_setting.setVisibility(View.GONE);
@@ -130,12 +133,17 @@ public class SettingFragment extends BaseFragment implements View.OnClickListene
             case R.id.view_oob:
                 startActivity(new Intent(getActivity(), OobListActivity.class));
                 break;
+
             case R.id.view_cert:
                 startActivity(new Intent(getActivity(), CertListActivity.class));
                 break;
 
             case R.id.view_log:
                 startActivity(new Intent(getActivity(), LogActivity.class));
+                break;
+
+            case R.id.view_pvt_dev:
+                startActivity(new Intent(getActivity(), PrivateDeviceListActivity.class));
                 break;
 
         }

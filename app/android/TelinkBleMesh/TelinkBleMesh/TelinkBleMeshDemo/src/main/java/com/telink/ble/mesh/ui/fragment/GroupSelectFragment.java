@@ -9,13 +9,11 @@ import android.view.ViewGroup;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.telink.ble.mesh.TelinkMeshApplication;
 import com.telink.ble.mesh.demo.R;
 import com.telink.ble.mesh.model.GroupInfo;
 import com.telink.ble.mesh.ui.PubAdrSelectActivity;
 import com.telink.ble.mesh.ui.adapter.SimpleGroupSelectAdapter;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -41,12 +39,6 @@ public class GroupSelectFragment extends BaseFragment {
     }
 
     private void initView(View view) {
-//        GroupInfo gpAll = new GroupInfo();
-//        gpAll.name = "Broadcast";
-//        gpAll.address = 0xFFFF;
-//        groupList = new ArrayList<>();
-//        groupList.add(gpAll);
-//        groupList.addAll(TelinkMeshApplication.getInstance().getMeshInfo().groups);
         View ll_empty = view.findViewById(R.id.ll_empty);
         ll_empty.setVisibility(View.GONE);
         RecyclerView rv_common = view.findViewById(R.id.rv_common);

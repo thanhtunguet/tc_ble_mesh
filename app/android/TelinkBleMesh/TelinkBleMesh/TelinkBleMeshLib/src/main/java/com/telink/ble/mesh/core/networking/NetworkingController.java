@@ -536,6 +536,7 @@ public class NetworkingController {
     public void checkSequenceNumber(byte[] networkId, byte[] beaconKey) {
         final boolean updatingNeeded = this.mSequenceNumber.get() >= THRESHOLD_SEQUENCE_NUMBER;
 
+        log("checkSequenceNumber => " + updatingNeeded + " -- " + isIvUpdating + " -> " + mSequenceNumber.get());
         if (isIvUpdating) {
             log("beacon updating status changed by remote device ");
         } else {
@@ -1178,7 +1179,9 @@ public class NetworkingController {
     private void onSequenceNumberUpdate(int latestSequenceNumber) {
         if (mNetworkingBridge != null) {
             if (mSnoUpdateStep == 0 || latestSequenceNumber % mSnoUpdateStep == 0) {
-                mNetworkingBridge.onNetworkInfoUpdate(latestSequenceNumber, (int) this.ivIndex);
+//                mNetworkingBridge.onNetworkInfoUpdate(latestSequenceNumber, (int) this.ivIndex);
+                // if the ivIndex is updating
+                mNetworkingBridge.onNetworkInfoUpdate(latestSequenceNumber, (int) this.initIvIndex);
             }
         }
     }
