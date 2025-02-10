@@ -1,3 +1,59 @@
+## V4.1.0.0_Patch_0005
+
+### Dependency Updates
+
+* telink_b85m_ble_single_connection_sdk_v3.4.1
+* mesh ble library commit log: SHA-1: ac49216f1036804ddeffcddd82bb1c301e70f8c4
+
+### Bug Fixes
+
+* N/A
+
+### Features
+
+* N/A
+
+### Performance Improvements
+
+* reduce LPN power consumption
+
+### BREAKING CHANGES
+
+* N/A
+
+### Notes
+
+* N/A
+
+### CodeSize
+
+* Flash and RAM (default target):
+  - 8258_mesh_LPN:____Flash 111 KB, RAM (23 KB + 3K stack),
+
+### Dependency Updates
+
+* N/A
+
+### Bug Fixes
+
+* 降低LPN功耗
+
+### Features
+
+* N/A
+
+### Performance Improvements
+
+* N/A
+
+### BREAKING CHANGES
+
+* N/A
+
+### Notes
+
+* N/A
+
 ## V4.1.0.0_Patch_0004
 
 ### Dependency Updates
