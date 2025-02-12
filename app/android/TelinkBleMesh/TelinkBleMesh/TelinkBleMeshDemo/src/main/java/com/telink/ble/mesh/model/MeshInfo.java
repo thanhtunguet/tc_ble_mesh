@@ -47,8 +47,10 @@ import com.telink.ble.mesh.util.MeshLogger;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 
 import io.objectbox.annotation.Entity;
@@ -294,6 +296,39 @@ public class MeshInfo implements Serializable, Cloneable {
         }
 
         return result;
+    }
+
+    /**
+     * get all online nodes
+     */
+    public List<NodeInfo> getOnlineNodes() {
+        List<NodeInfo> re = new ArrayList<>();
+        if (nodes == null || nodes.size() == 0) {
+            return re;
+        }
+        for (NodeInfo device : nodes) {
+            if (!device.isOffline()) {
+                re.add(device);
+            }
+        }
+        return re;
+    }
+
+
+    /**
+     * get all online nodes
+     */
+    public List<Integer> getOnlineAddresses() {
+        List<Integer> re = new ArrayList<>();
+        if (nodes == null || nodes.size() == 0) {
+            return re;
+        }
+        for (NodeInfo device : nodes) {
+            if (!device.isOffline()) {
+                re.add(device.meshAddress);
+            }
+        }
+        return re;
     }
 
     /**
