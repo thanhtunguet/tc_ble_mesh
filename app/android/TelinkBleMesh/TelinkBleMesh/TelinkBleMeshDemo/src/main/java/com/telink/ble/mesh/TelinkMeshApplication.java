@@ -31,6 +31,7 @@ import android.os.HandlerThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.telink.ble.mesh.core.MeshUtils;
 import com.telink.ble.mesh.core.message.MeshSigModel;
 import com.telink.ble.mesh.core.message.MeshStatus;
 import com.telink.ble.mesh.core.message.NotificationMessage;
@@ -48,6 +49,7 @@ import com.telink.ble.mesh.foundation.MeshService;
 import com.telink.ble.mesh.foundation.event.MeshEvent;
 import com.telink.ble.mesh.foundation.event.NetworkInfoUpdateEvent;
 import com.telink.ble.mesh.foundation.event.OnlineStatusEvent;
+import com.telink.ble.mesh.foundation.event.ReliableMessageProcessEvent;
 import com.telink.ble.mesh.foundation.event.StatusNotificationEvent;
 import com.telink.ble.mesh.model.AppSettings;
 import com.telink.ble.mesh.model.MeshInfo;
@@ -386,6 +388,25 @@ public class TelinkMeshApplication extends MeshApplication {
             }
             if (statusChangedNode != null) {
                 onNodeInfoStatusChanged(statusChangedNode);
+            }
+        }
+    }
+
+    @Override
+    protected void onReliableMessageProcessEvent(ReliableMessageProcessEvent event) {
+        if (ReliableMessageProcessEvent.EVENT_TYPE_MSG_PROCESS_COMPLETE.equals(event.getType())) {
+            boolean success = event.isSuccess();
+            if (success) return;
+            int dest = event.getDest();
+            if (MeshUtils.validUnicastAddress(dest)) {
+                // the message is sent to unicast address
+                // find the node, and set it to offline
+                NodeInfo node = meshInfo.getDeviceByElementAddress(dest);
+                if (node != null) {
+                    MeshLogger.log("auto offline confirmed");
+                    node.setOnlineState(OnlineState.OFFLINE);
+                    onNodeInfoStatusChanged(node);
+                }
             }
         }
     }
