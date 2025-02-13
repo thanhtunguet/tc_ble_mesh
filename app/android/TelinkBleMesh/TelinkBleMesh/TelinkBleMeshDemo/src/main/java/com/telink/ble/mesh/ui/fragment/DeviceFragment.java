@@ -41,6 +41,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.telink.ble.mesh.NodeSortType;
 import com.telink.ble.mesh.SharedPreferenceHelper;
 import com.telink.ble.mesh.TelinkMeshApplication;
+import com.telink.ble.mesh.core.message.MeshMessage;
 import com.telink.ble.mesh.core.message.config.CompositionDataStatusMessage;
 import com.telink.ble.mesh.core.message.generic.OnOffGetMessage;
 import com.telink.ble.mesh.core.message.generic.OnOffSetMessage;
@@ -165,33 +166,22 @@ public class DeviceFragment extends BaseFragment implements View.OnClickListener
 
         mAdapter.setOnItemClickListener(position -> {
             NodeInfo node = mDevices.get(position);
-            if (node.isOffline()) return;
             if (node.isSensor()) return;
-
-            int onOff = 0;
-            if (node.getOnlineState() == OnlineState.OFF) {
-                onOff = 1;
-            }
 
             int address = mDevices.get(position).meshAddress;
             int appKeyIndex = TelinkMeshApplication.getInstance().getMeshInfo().getDefaultAppKeyIndex();
-            OnOffSetMessage onOffSetMessage = OnOffSetMessage.getSimple(address, appKeyIndex, onOff, !AppSettings.ONLINE_STATUS_ENABLE, !AppSettings.ONLINE_STATUS_ENABLE ? 1 : 0);
-            MeshService.getInstance().sendMeshMessage(onOffSetMessage);
-
-            /*int address = mDevices.get(position).meshAddress;
-            int appKeyIndex = TelinkMeshApplication.getInstance().getMeshInfo().getDefaultAppKeyIndex();
-            OnOffSetMessage onOffSetMessage = OnOffSetMessage.getSimple(address, appKeyIndex, onOff, false, 0);
-            MeshService.getInstance().sendMeshMessage(onOffSetMessage);
-
-            mCycleHandler.removeCallbacksAndMessages(null);
-            mCycleHandler.postDelayed(() -> {
-                int modelId = MeshSigModel.SIG_MD_LIGHT_HSL_S.modelId;
-                int modelEleAdr = mDevices.get(position).getTargetEleAdr(modelId);
-                if (modelEleAdr != -1) {
-                    MeshService.getInstance().sendMeshMessage(HslGetMessage.getSimple(modelEleAdr, appKeyIndex, 0));
+            MeshMessage meshMessage;
+            if (node.isOffline()) {
+                // if node is offline, send get message
+                meshMessage = OnOffGetMessage.getSimple(address, appKeyIndex, 0);
+            } else {
+                int onOff = 0;
+                if (node.getOnlineState() == OnlineState.OFF) {
+                    onOff = 1;
                 }
-            }, 3000);*/
-
+                meshMessage = OnOffSetMessage.getSimple(address, appKeyIndex, onOff, !AppSettings.ONLINE_STATUS_ENABLE, !AppSettings.ONLINE_STATUS_ENABLE ? 1 : 0);
+            }
+            MeshService.getInstance().sendMeshMessage(meshMessage);
         });
 
         mAdapter.setOnItemLongClickListener(position -> {
