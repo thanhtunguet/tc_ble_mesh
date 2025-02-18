@@ -265,6 +265,10 @@ public class NetworkingController {
      */
     private MeshMessage mSendingReliableMessage;
 
+    /**
+     * only one reliable message can be sent at one time,
+     * if reliableBusy
+     */
     private boolean reliableBusy = false;
 
     // reliable
@@ -1659,17 +1663,20 @@ public class NetworkingController {
             networkingBusy = false;
             mNetworkingQueue.clear();
         }
-
+        final MeshMessage msg = mSendingReliableMessage;
+        if (msg == null) return;
         mDelayHandler.removeCallbacks(reliableMessageTimeoutTask);
-        int opcode = mSendingReliableMessage.getOpcode();
-        int rspMax = mSendingReliableMessage.getResponseMax();
+        int opcode = msg.getOpcode();
+        int dest = msg.getDestinationAddress();
+        int rspMax = msg.getResponseMax();
         int rspCount = mResponseMessageBuffer.size();
         log(String.format("Reliable Message Complete: %06X success?: %b", opcode, success));
+        Integer[] arr = mResponseMessageBuffer.toArray(new Integer[0]);
         mResponseMessageBuffer.clear();
         synchronized (RELIABLE_SEGMENTED_LOCK) {
             reliableBusy = false;
             if (success) {
-                if (segmentedBusy && mSendingReliableMessage.isSegmented()) {
+                if (segmentedBusy && msg.isSegmented()) {
                     segmentedBusy = false;
                     stopSegmentedBlockAckWaiting(true, true);
 //                    mDelayHandler.removeCallbacks(mSegmentBlockWaitingTask);
@@ -1679,7 +1686,7 @@ public class NetworkingController {
 
 
         if (mNetworkingBridge != null) {
-            mNetworkingBridge.onReliableMessageComplete(success, opcode, rspMax, rspCount);
+            mNetworkingBridge.onReliableMessageComplete(success, opcode, dest, rspMax, rspCount, arr);
         }
     }
 

@@ -203,6 +203,8 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
      */
     private GattOtaController mGattOtaController;
 
+    private MulticastMessageBroker mMulticastMessageBroker;
+
     /**
      * current active action
      */
@@ -583,6 +585,9 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
 
         mFastProvisioningController = new FastProvisioningController(handlerThread);
         mFastProvisioningController.register(this);
+
+        mMulticastMessageBroker = new MulticastMessageBroker(handlerThread);
+        mMulticastMessageBroker.register(this);
     }
 
     /**
@@ -1185,8 +1190,11 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
      * @param rspCount  response count
      * @param desc      description
      */
-    private void onReliableMessageProcessEvent(String eventType, boolean success, int opcode, int rspMax, int rspCount, String desc) {
+    private void onReliableMessageProcessEvent(String eventType, boolean success, int opcode, int dest,
+                                               int rspMax, int rspCount, Integer[] rspArr, String desc) {
         ReliableMessageProcessEvent event = new ReliableMessageProcessEvent(this, eventType, success, opcode, rspMax, rspCount, desc);
+        event.setDest(dest);
+        event.setRspArr(rspArr);
         onEventPrepared(event);
     }
 
@@ -1271,6 +1279,10 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
                 + " isReliable: " + meshMessage.isReliable()
                 + " retryCnt: " + meshMessage.getRetryCnt()
                 + " rspMax: " + meshMessage.getResponseMax());
+        if (meshMessage.useMultiMessageBroker()) {
+            return mMulticastMessageBroker.sendMessage(meshMessage);
+        }
+
         final boolean sent = mNetworkingController.sendMeshMessage(meshMessage);
         if (meshMessage.isReliable()) {
             if (sent) {
@@ -1278,16 +1290,20 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
                 onReliableMessageProcessEvent(ReliableMessageProcessEvent.EVENT_TYPE_MSG_PROCESSING,
                         false,
                         meshMessage.getOpcode(),
+                        meshMessage.getDestinationAddress(),
                         meshMessage.getResponseMax(),
                         0,
+                        null,
                         "mesh message processing");
             } else {
                 // busy
                 onReliableMessageProcessEvent(ReliableMessageProcessEvent.EVENT_TYPE_MSG_PROCESS_ERROR,
                         false,
                         meshMessage.getOpcode(),
+                        meshMessage.getDestinationAddress(),
                         meshMessage.getResponseMax(),
                         0,
+                        null,
                         "mesh message send fail");
             }
         }
@@ -2328,7 +2344,7 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
         @Override
         public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
             log("scan:" + device.getName() + " --mac: " + device.getAddress() + " --record: " + Arrays.bytesToHexString(scanRecord, ":"));
-//            if (!device.getAddress().contains("FF:FF:BB:CC:DD:81")) return;
+//            if (!device.getAddress().contains("FF:FF:BB:CC:DD:72")) return;
             onScanFilter(device, rssi, scanRecord);
         }
 
@@ -2584,7 +2600,8 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
      * @param rspCount received response count
      */
     @Override
-    public void onReliableMessageComplete(boolean success, int opcode, int rspMax, int rspCount) {
+    public void onReliableMessageComplete(boolean success, int opcode, int dest,
+                                          int rspMax, int rspCount, Integer[] rspArr) {
         if (actionMode == Mode.MODE_BIND) {
             mBindingController.onBindingCommandComplete(success, opcode, rspMax, rspCount);
         } else if (actionMode == Mode.MESH_OTA) {
@@ -2595,11 +2612,14 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
         } else if (actionMode == Mode.FAST_PROVISION) {
             mFastProvisioningController.onFastProvisioningCommandComplete(success, opcode, rspMax, rspCount);
         }
+        if (mMulticastMessageBroker.isBrokerBusy()) {
+            mMulticastMessageBroker.onMessageComplete(success, opcode, rspArr);
+        }
         if (!success) {
             onInnerMessageFailed(opcode);
         }
         onReliableMessageProcessEvent(ReliableMessageProcessEvent.EVENT_TYPE_MSG_PROCESS_COMPLETE,
-                success, opcode, rspMax, rspCount, "mesh message send complete");
+                success, opcode, dest, rspMax, rspCount, rspArr, "mesh message send complete");
     }
 
     /**
@@ -2752,7 +2772,7 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
         } else if (actionMode == Mode.FAST_PROVISION) {
             mFastProvisioningController.onMessageNotification(notificationMessage);
         }
-
+        mMulticastMessageBroker.onMessageNotification(notificationMessage);
         String eventType;
         StatusMessage statusMessage = notificationMessage.getStatusMessage();
 
@@ -2925,6 +2945,8 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
             }
         } else if (actionMode == Mode.FAST_PROVISION && mode == AccessBridge.MODE_FAST_PROVISION) {
             onFastPvStateChanged(state, desc, obj);
+        } else if (mode == AccessBridge.MODE_MSG_BROKER) {
+            onMulticastMsgBrokerStateChanged(state, desc, obj);
         }
     }
 
@@ -3061,6 +3083,12 @@ public final class MeshController implements ProvisioningBridge, NetworkingBridg
             meshConfiguration.localAddress = this.meshConfiguration.localAddress;
             log("setup config fast: " + meshConfiguration.ivIndex);
             mNetworkingController.setup(meshConfiguration);
+        }
+    }
+
+    private void onMulticastMsgBrokerStateChanged(int state, String desc, Object obj) {
+        if (state == MulticastMessageBroker.ACCESS_ST_NODE_LOST) {
+            // post lost event
         }
     }
 

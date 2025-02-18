@@ -41,6 +41,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.telink.ble.mesh.NodeSortType;
 import com.telink.ble.mesh.SharedPreferenceHelper;
 import com.telink.ble.mesh.TelinkMeshApplication;
+import com.telink.ble.mesh.core.message.MeshMessage;
 import com.telink.ble.mesh.core.message.config.CompositionDataStatusMessage;
 import com.telink.ble.mesh.core.message.generic.OnOffGetMessage;
 import com.telink.ble.mesh.core.message.generic.OnOffSetMessage;
@@ -48,6 +49,7 @@ import com.telink.ble.mesh.demo.R;
 import com.telink.ble.mesh.foundation.Event;
 import com.telink.ble.mesh.foundation.EventListener;
 import com.telink.ble.mesh.foundation.MeshService;
+import com.telink.ble.mesh.foundation.MulticastMessageBroker;
 import com.telink.ble.mesh.foundation.event.AutoConnectEvent;
 import com.telink.ble.mesh.foundation.event.MeshEvent;
 import com.telink.ble.mesh.foundation.event.StatusNotificationEvent;
@@ -164,33 +166,22 @@ public class DeviceFragment extends BaseFragment implements View.OnClickListener
 
         mAdapter.setOnItemClickListener(position -> {
             NodeInfo node = mDevices.get(position);
-            if (node.isOffline()) return;
             if (node.isSensor()) return;
-
-            int onOff = 0;
-            if (node.getOnlineState() == OnlineState.OFF) {
-                onOff = 1;
-            }
 
             int address = mDevices.get(position).meshAddress;
             int appKeyIndex = TelinkMeshApplication.getInstance().getMeshInfo().getDefaultAppKeyIndex();
-            OnOffSetMessage onOffSetMessage = OnOffSetMessage.getSimple(address, appKeyIndex, onOff, !AppSettings.ONLINE_STATUS_ENABLE, !AppSettings.ONLINE_STATUS_ENABLE ? 1 : 0);
-            MeshService.getInstance().sendMeshMessage(onOffSetMessage);
-
-            /*int address = mDevices.get(position).meshAddress;
-            int appKeyIndex = TelinkMeshApplication.getInstance().getMeshInfo().getDefaultAppKeyIndex();
-            OnOffSetMessage onOffSetMessage = OnOffSetMessage.getSimple(address, appKeyIndex, onOff, false, 0);
-            MeshService.getInstance().sendMeshMessage(onOffSetMessage);
-
-            mCycleHandler.removeCallbacksAndMessages(null);
-            mCycleHandler.postDelayed(() -> {
-                int modelId = MeshSigModel.SIG_MD_LIGHT_HSL_S.modelId;
-                int modelEleAdr = mDevices.get(position).getTargetEleAdr(modelId);
-                if (modelEleAdr != -1) {
-                    MeshService.getInstance().sendMeshMessage(HslGetMessage.getSimple(modelEleAdr, appKeyIndex, 0));
+            MeshMessage meshMessage;
+            if (node.isOffline()) {
+                // if node is offline, send get message
+                meshMessage = OnOffGetMessage.getSimple(address, appKeyIndex, 0);
+            } else {
+                int onOff = 0;
+                if (node.getOnlineState() == OnlineState.OFF) {
+                    onOff = 1;
                 }
-            }, 3000);*/
-
+                meshMessage = OnOffSetMessage.getSimple(address, appKeyIndex, onOff, !AppSettings.ONLINE_STATUS_ENABLE, !AppSettings.ONLINE_STATUS_ENABLE ? 1 : 0);
+            }
+            MeshService.getInstance().sendMeshMessage(meshMessage);
         });
 
         mAdapter.setOnItemLongClickListener(position -> {
@@ -376,20 +367,26 @@ public class DeviceFragment extends BaseFragment implements View.OnClickListener
 
             case R.id.tv_on:
 //                startTime = System.currentTimeMillis();
-                int rspMax = TelinkMeshApplication.getInstance().getMeshInfo().getOnlineCountInAll();
+//                int rspMax = TelinkMeshApplication.getInstance().getMeshInfo().getOnlineCountInAll();
+                List<Integer> addresses = TelinkMeshApplication.getInstance().getMeshInfo().getOnlineAddresses();
+                int rspMax = addresses.size();
 
                 int address = 0xFFFF;
                 int appKeyIndex = TelinkMeshApplication.getInstance().getMeshInfo().getDefaultAppKeyIndex();
                 OnOffSetMessage onOffSetMessage = OnOffSetMessage.getSimple(address, appKeyIndex, 1, !AppSettings.ONLINE_STATUS_ENABLE, !AppSettings.ONLINE_STATUS_ENABLE ? rspMax : 0);
+                onOffSetMessage.setBrokerConfig(new MulticastMessageBroker.Config(addresses));
                 MeshService.getInstance().sendMeshMessage(onOffSetMessage);
                 break;
             case R.id.tv_off:
 //                startTime = System.currentTimeMillis();
-                rspMax = TelinkMeshApplication.getInstance().getMeshInfo().getOnlineCountInAll();
+//                rspMax = TelinkMeshApplication.getInstance().getMeshInfo().getOnlineCountInAll();
+                addresses = TelinkMeshApplication.getInstance().getMeshInfo().getOnlineAddresses();
+                rspMax = addresses.size();
 
                 address = 0xFFFF;
                 appKeyIndex = TelinkMeshApplication.getInstance().getMeshInfo().getDefaultAppKeyIndex();
                 onOffSetMessage = OnOffSetMessage.getSimple(address, appKeyIndex, 0, !AppSettings.ONLINE_STATUS_ENABLE, !AppSettings.ONLINE_STATUS_ENABLE ? rspMax : 0);
+                onOffSetMessage.setBrokerConfig(new MulticastMessageBroker.Config(addresses));
                 MeshService.getInstance().sendMeshMessage(onOffSetMessage);
 
                 break;
