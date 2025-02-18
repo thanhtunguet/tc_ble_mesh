@@ -15,7 +15,7 @@
 
 ### Performance Improvements
 
-* reduce LPN power consumption
+* reduce LPN power consumption. before modification, the concurrent of lpn is 23.5ua with 5 seconds lpn poll interval. after modification, the concurrent of lpn decrease to 16.4ua.
 
 ### BREAKING CHANGES
 
@@ -36,7 +36,7 @@
 
 ### Bug Fixes
 
-* 降低LPN功耗
+* 降低LPN功耗。修改之前，lpn在5秒poll间隔下电流为23.5ua。修改后，电流降低到16.4ua。
 
 ### Features
 
