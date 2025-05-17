@@ -1,11 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 35
     defaultConfig {
         applicationId "com.telink.ble.mesh.demo.rels"
-        minSdkVersion 21
-        targetSdkVersion 26
+        minSdkVersion 23
         versionCode 9
         versionName "4.1.0.2"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -16,11 +15,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    compileOptions {
-        sourceCompatibility = 1.8
-        targetCompatibility = 1.8
-    }
-    buildToolsVersion = '28.0.3'
+    namespace 'com.telink.ble.mesh.demo'
+//    compileOptions {
+//        sourceCompatibility = 1.8
+//        targetCompatibility = 1.8
+//    }
 }
 
 dependencies {
@@ -37,7 +36,7 @@ dependencies {
     // QRCode
     implementation 'com.google.zxing:core:3.2.1'
     implementation 'com.google.zxing:android-core:3.2.1'
-    implementation 'me.dm7.barcodescanner:zxing:1.9.13'
+    implementation 'me.dm7.barcodescanner:zxing:1.9.8'
 
     // http
     implementation 'com.squareup.okhttp3:okhttp:3.10.0'
