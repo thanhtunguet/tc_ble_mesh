@@ -1,7 +1,24 @@
 apply plugin: 'com.android.library'
+buildscript {
+    ext.kotlin_version = '1.8.22'
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.0' // or 8.0.2 if more stable for your setup
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
 
 android {
-    compileSdkVersion 35
+    compileSdkVersion 33
 
     defaultConfig {
         minSdkVersion 21
@@ -14,8 +31,13 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    namespace 'com.telink.ble.mesh.lib'
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    namespace 'com.telink.ble.mesh.lib'
 }
 
 dependencies {
